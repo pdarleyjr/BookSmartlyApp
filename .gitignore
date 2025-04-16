@@ -31,7 +31,17 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
 
 # Build files
 /build
 /dist
+
+# Fine.dev specific files
+/fine-ai-guide.md
+/fine.config.json
+/deployment.md
+/Fine_Dev_AI_DOCS
+
+# Include documentation in the docs directory
+!docs/

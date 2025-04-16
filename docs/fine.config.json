@@ -1,0 +1,24 @@
+{
+  "name": "BookSmartly",
+  "description": "A booking and appointment management application",
+  "scripts": {
+    "install": "npm install",
+    "run": "npm run dev",
+    "build": "npm run build"
+  },
+  "port": 3000,
+  "environment": {
+    "DATABASE_URL": "postgresql://username:password@localhost:5432/booksmartly",
+    "API_KEY": "your_api_key",
+    "PORT": "3000"
+  },
+  "projectInstructions": [
+    "BookSmartly is a booking and appointment management application built with React, TypeScript, and Vite.",
+    "The application uses the Fine.dev SDK for authentication and database operations.",
+    "The project follows a component-based architecture with pages, components, and API services.",
+    "The application uses Redux Toolkit for state management.",
+    "The UI is built with TailwindCSS and shadcn/ui components.",
+    "The application has user and admin sections with different permissions.",
+    "The database schema includes users, organizations, appointments, appointment types, and locations."
+  ]
+}
