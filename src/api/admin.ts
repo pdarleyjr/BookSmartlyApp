@@ -363,7 +363,7 @@ export const adminApi = {
     try {
       try {
         await fine.table("users")
-          .update({ organizationId })
+          .update({ organizationId, updatedAt: new Date().toISOString() })
           .eq("id", userId);
         
         return true;

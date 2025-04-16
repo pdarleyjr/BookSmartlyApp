@@ -79,5 +79,23 @@ export const organizationsApi = {
       console.error(`Error regenerating access code:`, error);
       return null;
     }
+  },
+  
+  /**
+   * Get organization by ID
+   * @param organizationId - Organization ID
+   * @returns Promise with organization details
+   */
+  getOrganizationById: async (organizationId: number): Promise<Schema["organizations"] | null> => {
+    try {
+      const orgs = await fine.table("organizations")
+        .select()
+        .eq("id", organizationId);
+      
+      return orgs && orgs.length > 0 ? orgs[0] : null;
+    } catch (error) {
+      console.error(`Error fetching organization ${organizationId}:`, error);
+      return null;
+    }
   }
 };

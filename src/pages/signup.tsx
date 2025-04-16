@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminApi } from "@/api/admin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { organizationsApi } from "@/api/organizations";
 
 export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -148,30 +149,38 @@ export default function SignupForm() {
           onRequest: () => {
             setIsLoading(true);
           },
-          onSuccess: async () => {
-            // After successful signup, we need to handle organization-specific logic
+          onSuccess: async (ctx) => {
+            // After successful signup, handle organization-specific logic
             try {
-              // Since we can't directly get the user ID from the signup response,
-              // we'll need to handle organization setup after the user logs in
-              // for the first time. For now, just show a success message.
+              // Create organization if needed
+              if (accountType === "organization" && formData.organizationName) {
+                const newOrg = await organizationsApi.createOrganization(formData.organizationName);
+                
+                if (newOrg && ctx.session?.user?.id) {
+                  // Set user as organization admin
+                  await adminApi.updateUserOrganization(ctx.session.user.id, newOrg.id);
+                  await adminApi.updateUserRole(ctx.session.user.id, 'org_admin');
+                  
+                  toast({
+                    title: "Organization created",
+                    description: `Your organization "${formData.organizationName}" has been created and you are set as admin.`,
+                  });
+                }
+              } 
+              // Add user to organization if joining
+              else if (accountType === "orgUser" && formData.organizationId && ctx.session?.user?.id) {
+                await adminApi.updateUserOrganization(ctx.session.user.id, parseInt(formData.organizationId));
+                
+                toast({
+                  title: "Organization joined",
+                  description: "You have been added to the organization.",
+                });
+              }
               
               toast({
                 title: "Account created",
-                description: "Please check your email to verify your account and log in.",
+                description: "Your account has been created successfully.",
               });
-              
-              // For organization creators, we'll provide additional instructions
-              if (accountType === "organization") {
-                toast({
-                  title: "Organization setup",
-                  description: "After logging in, you'll be set as the organization admin.",
-                });
-              } else if (accountType === "orgUser") {
-                toast({
-                  title: "Organization membership",
-                  description: "After logging in, you'll be added to your organization.",
-                });
-              }
               
               navigate("/login");
             } catch (orgError) {

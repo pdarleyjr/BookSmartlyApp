@@ -8,12 +8,13 @@ import { AdminProtectedRoute } from "@/components/auth/admin-route-components";
 import { useAdminStatus } from "@/hooks/use-admin";
 import { adminApi } from "@/api/admin";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Calendar, Building } from "lucide-react";
+import { Users, Calendar, Building, AlertCircle } from "lucide-react";
 import type { UserWithRole } from "@/api/admin";
 import type { Schema } from "@/lib/db-types";
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<UserWithRole[]>([]);
   const [appointments, setAppointments] = useState<(Schema["appointments"] & { userName?: string })[]>([]);
   const [organizations, setOrganizations] = useState<Schema["organizations"][]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +39,13 @@ const AdminDashboard = () => {
           setOrganizations(allOrgs);
         } else if (isOrgAdmin && organizationId) {
           const orgUsers = await adminApi.getOrganizationUsers(organizationId);
-          setUsers(orgUsers);
+          
+          // Separate regular users from pending users (those without roles)
+          const regular = orgUsers.filter(user => user.role);
+          const pending = orgUsers.filter(user => !user.role);
+          
+          setUsers(regular);
+          setPendingUsers(pending);
           
           const orgAppointments = await adminApi.getOrganizationAppointments(organizationId);
           setAppointments(orgAppointments);
@@ -56,6 +63,61 @@ const AdminDashboard = () => {
     
     fetchData();
   }, [isSuperAdmin, isOrgAdmin, organizationId]);
+
+  const handleApproveUser = async (userId: string) => {
+    if (!organizationId) return;
+    
+    try {
+      await adminApi.updateUserRole(userId, 'user');
+      
+      toast({
+        title: "User approved",
+        description: "User has been approved and added to your organization.",
+      });
+      
+      // Refresh the user lists
+      const orgUsers = await adminApi.getOrganizationUsers(organizationId);
+      const regular = orgUsers.filter(user => user.role);
+      const pending = orgUsers.filter(user => !user.role);
+      
+      setUsers(regular);
+      setPendingUsers(pending);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectUser = async (userId: string) => {
+    if (!organizationId) return;
+    
+    try {
+      // Remove user from organization
+      await adminApi.updateUserOrganization(userId, null);
+      
+      toast({
+        title: "User rejected",
+        description: "User has been removed from your organization.",
+      });
+      
+      // Refresh the user lists
+      const orgUsers = await adminApi.getOrganizationUsers(organizationId);
+      const regular = orgUsers.filter(user => user.role);
+      const pending = orgUsers.filter(user => !user.role);
+      
+      setUsers(regular);
+      setPendingUsers(pending);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Layout>
@@ -86,6 +148,59 @@ const AdminDashboard = () => {
           </TabsList>
           
           <TabsContent value="users">
+            {/* Pending Users Section (for org admins) */}
+            {isOrgAdmin && pendingUsers.length > 0 && (
+              <Card className="mb-6 border-l-4 border-l-amber-500">
+                <CardHeader>
+                  <CardTitle className="font-poppins flex items-center">
+                    <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
+                    Pending User Requests
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-poppins">Name</th>
+                          <th className="text-left py-3 px-4 font-poppins">Email</th>
+                          <th className="text-right py-3 px-4 font-poppins">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingUsers.map((user) => (
+                          <tr key={user.id} className="border-b hover:bg-muted/50">
+                            <td className="py-3 px-4 font-montserrat">{user.name || "N/A"}</td>
+                            <td className="py-3 px-4 font-montserrat">{user.email}</td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <IOSButton 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleRejectUser(user.id)}
+                                  className="text-destructive border-destructive hover:bg-destructive/10"
+                                >
+                                  Reject
+                                </IOSButton>
+                                <IOSButton 
+                                  size="sm"
+                                  onClick={() => handleApproveUser(user.id)}
+                                  className="bg-green-600 text-white hover:bg-green-700"
+                                >
+                                  Approve
+                                </IOSButton>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Regular Users Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="font-poppins">
@@ -223,6 +338,7 @@ const AdminDashboard = () => {
                           <tr className="border-b">
                             <th className="text-left py-3 px-4 font-poppins">Name</th>
                             <th className="text-left py-3 px-4 font-poppins">Created</th>
+                            <th className="text-left py-3 px-4 font-poppins">Access Code</th>
                             <th className="text-right py-3 px-4 font-poppins">Actions</th>
                           </tr>
                         </thead>
@@ -232,6 +348,9 @@ const AdminDashboard = () => {
                               <td className="py-3 px-4 font-montserrat">{org.name}</td>
                               <td className="py-3 px-4 font-montserrat">
                                 {new Date(org.createdAt!).toLocaleDateString()}
+                              </td>
+                              <td className="py-3 px-4 font-montserrat">
+                                {org.accessCode || "No code"}
                               </td>
                               <td className="py-3 px-4 text-right">
                                 <IOSButton 
