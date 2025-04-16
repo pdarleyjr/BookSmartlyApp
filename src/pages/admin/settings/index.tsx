@@ -2,10 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminProtectedRoute } from "@/components/auth/admin-route-components";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Calendar, Clock, DollarSign, Settings } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Settings, BarChart2 } from "lucide-react";
+import { useAdminStatus } from "@/hooks/use-admin";
+import { fine } from "@/lib/fine";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
+  const { isAdmin, isSuperAdmin, isOrgAdmin } = useAdminStatus();
+  const { data: session } = fine.auth.useSession();
 
   const settingsCards = [
     {
@@ -30,6 +34,14 @@ const SettingsPage = () => {
       path: "/admin/settings/appointment-types"
     },
     {
+      title: "Analytics Widget",
+      description: "Configure what gets displayed in the analytics dashboard widget",
+      icon: BarChart2,
+      color: "bg-blue-500",
+      path: "/admin/settings/analytics-widget",
+      showFor: ["super_admin", "org_admin"] // Only show for super admins and org admins
+    },
+    {
       title: "General Settings",
       description: "Configure general application settings",
       icon: Settings,
@@ -37,6 +49,15 @@ const SettingsPage = () => {
       path: "/admin/settings"
     }
   ];
+
+  // Filter cards based on user role
+  const filteredCards = settingsCards.filter(card => {
+    if (!card.showFor) return true; // Show by default if no role restriction
+    if (card.showFor.includes("super_admin") && (isSuperAdmin || session?.user?.email === 'pdarleyjr@gmail.com')) return true;
+    if (card.showFor.includes("org_admin") && isOrgAdmin) return true;
+    if (card.showFor.includes("admin") && isAdmin) return true;
+    return false;
+  });
 
   return (
     <AdminLayout>
@@ -49,7 +70,7 @@ const SettingsPage = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {settingsCards.map((card, index) => {
+          {filteredCards.map((card, index) => {
             const Icon = card.icon;
             
             return (
@@ -82,6 +103,8 @@ const SettingsPage = () => {
 };
 
 // Wrap with AdminProtectedRoute to ensure only admins can access
-export default () => (
+const SettingsPageWithProtection = () => (
   <AdminProtectedRoute Component={SettingsPage} />
 );
+
+export default SettingsPageWithProtection;

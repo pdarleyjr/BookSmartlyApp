@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useAdminStatus } from "@/hooks/use-admin";
+import { fine } from "@/lib/fine";
 import { 
   LayoutDashboard, 
   Users, 
@@ -11,7 +12,8 @@ import {
   Settings, 
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -52,6 +54,7 @@ const SidebarItem = ({ icon: Icon, label, href, active, onClick }: SidebarItemPr
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isSuperAdmin } = useAdminStatus();
+  const { data: session } = fine.auth.useSession();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
@@ -107,7 +110,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   href="/admin/appointments"
                   onClick={() => navigate("/admin")}
                 />
-                {isSuperAdmin && (
+                <SidebarItem
+                  icon={BarChart3}
+                  label="Analytics"
+                  href="/admin/analytics"
+                  onClick={() => navigate("/admin/analytics")}
+                />
+                {(isSuperAdmin || session?.user?.email === 'pdarleyjr@gmail.com') && (
                   <SidebarItem
                     icon={Building}
                     label="Organizations"
