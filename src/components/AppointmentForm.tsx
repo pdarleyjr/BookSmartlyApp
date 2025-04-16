@@ -63,7 +63,7 @@ export function AppointmentForm({ appointment, isEditing = false }: AppointmentF
         setLocations(locs);
         
         // Load organization users if admin
-        if (isOrgAdmin && organizationId) {
+        if ((isOrgAdmin || isAdmin) && organizationId) {
           const users = await adminApi.getOrganizationUsers(organizationId);
           setOrganizationUsers(users);
         }
@@ -75,7 +75,7 @@ export function AppointmentForm({ appointment, isEditing = false }: AppointmentF
     };
     
     loadData();
-  }, [organizationId, isOrgAdmin]);
+  }, [organizationId, isOrgAdmin, isAdmin]);
 
   useEffect(() => {
     if (appointment) {
@@ -349,27 +349,37 @@ export function AppointmentForm({ appointment, isEditing = false }: AppointmentF
             )}
           </div>
           
-          {/* Assigned Staff Member (only for org admins) */}
-          {isOrgAdmin && organizationUsers.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="assignedToUserId" className="font-poppins">Assigned To</Label>
-              <Select 
-                value={formData.assignedToUserId || ""} 
-                onValueChange={(value) => handleSelectChange("assignedToUserId", value)}
-              >
-                <SelectTrigger id="assignedToUserId" className="ios-touch-target">
-                  <SelectValue placeholder="Select staff member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {organizationUsers.map((user) => (
+          {/* Assigned Clinician - Always show this field */}
+          <div className="space-y-2">
+            <Label htmlFor="assignedToUserId" className="font-poppins">Assigned Clinician</Label>
+            <Select 
+              value={formData.assignedToUserId || ""} 
+              onValueChange={(value) => handleSelectChange("assignedToUserId", value)}
+            >
+              <SelectTrigger id="assignedToUserId" className="ios-touch-target">
+                <SelectValue placeholder="Select clinician" />
+              </SelectTrigger>
+              <SelectContent>
+                {organizationUsers.length > 0 ? (
+                  organizationUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                  ))
+                ) : (
+                  // If no organization users, show current user
+                  <SelectItem value={session?.user?.id || ""}>
+                    {session?.user?.name || session?.user?.email || "You"}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            {organizationUsers.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No other clinicians available. Add users to your organization in admin settings.
+              </p>
+            )}
+          </div>
           
           {/* Location */}
           <div className="space-y-2">
