@@ -1,4 +1,5 @@
 import { fine } from "@/lib/fine";
+import { organizationsApi } from "@/api/organizations";
 import type { Schema } from "@/lib/db-types";
 
 export type UserWithRole = Schema["users"] & {
@@ -384,22 +385,7 @@ export const adminApi = {
    */
   createOrganization: async (name: string): Promise<Schema["organizations"] | null> => {
     try {
-      try {
-        const now = new Date().toISOString();
-        const newOrg = {
-          name,
-          createdAt: now,
-          updatedAt: now
-        };
-        
-        const orgs = await fine.table("organizations").insert(newOrg).select();
-        
-        return orgs && orgs.length > 0 ? orgs[0] : null;
-      } catch (error) {
-        // Table might not exist yet
-        console.error("Error creating organization, table might not exist:", error);
-        return null;
-      }
+      return await organizationsApi.createOrganization(name);
     } catch (error) {
       console.error(`Error creating organization ${name}:`, error);
       return null;
@@ -422,6 +408,53 @@ export const adminApi = {
     } catch (error) {
       console.error("Error fetching organizations:", error);
       return [];
+    }
+  },
+  
+  /**
+   * Get organization details including access code
+   * @param organizationId - The organization ID
+   * @returns Promise with organization details
+   */
+  getOrganizationDetails: async (organizationId: number): Promise<Schema["organizations"] | null> => {
+    try {
+      const orgs = await fine.table("organizations")
+        .select()
+        .eq("id", organizationId);
+      
+      return orgs && orgs.length > 0 ? orgs[0] : null;
+    } catch (error) {
+      console.error(`Error fetching organization ${organizationId}:`, error);
+      return null;
+    }
+  },
+  
+  /**
+   * Regenerate organization access code
+   * @param organizationId - The organization ID
+   * @returns Promise with the new access code
+   */
+  regenerateOrganizationCode: async (organizationId: number): Promise<string | null> => {
+    try {
+      return await organizationsApi.regenerateAccessCode(organizationId);
+    } catch (error) {
+      console.error(`Error regenerating access code for organization ${organizationId}:`, error);
+      return null;
+    }
+  },
+  
+  /**
+   * Verify organization access code
+   * @param organizationId - The organization ID
+   * @param accessCode - The access code to verify
+   * @returns Promise with verification result
+   */
+  verifyOrganizationCode: async (organizationId: number, accessCode: string): Promise<boolean> => {
+    try {
+      return await organizationsApi.verifyOrganizationCode(organizationId, accessCode);
+    } catch (error) {
+      console.error(`Error verifying access code for organization ${organizationId}:`, error);
+      return false;
     }
   }
 };

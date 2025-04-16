@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { AdminProtectedRoute } from "@/components/auth/admin-route-components";
 import { adminApi } from "@/api/admin";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy, RefreshCw } from "lucide-react";
 import type { UserWithRole } from "@/api/admin";
 import type { Schema } from "@/lib/db-types";
 
@@ -17,6 +17,7 @@ const OrganizationManagementPage = () => {
   const [organization, setOrganization] = useState<Schema["organizations"] | null>(null);
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -27,16 +28,15 @@ const OrganizationManagementPage = () => {
       try {
         setIsLoading(true);
         
-        // Fetch all organizations to find the specific one
-        const allOrgs = await adminApi.getAllOrganizations();
-        const foundOrg = allOrgs.find(o => o.id === parseInt(id));
+        // Fetch organization details
+        const orgId = parseInt(id);
+        const orgDetails = await adminApi.getOrganizationDetails(orgId);
         
-        if (foundOrg) {
-          setOrganization(foundOrg);
+        if (orgDetails) {
+          setOrganization(orgDetails);
           
-          // Fetch all users to find those in this organization
-          const allUsers = await adminApi.getAllUsers();
-          const orgUsers = allUsers.filter(u => u.organizationId === foundOrg.id);
+          // Fetch users in this organization
+          const orgUsers = await adminApi.getOrganizationUsers(orgId);
           setUsers(orgUsers);
         } else {
           toast({
@@ -60,6 +60,43 @@ const OrganizationManagementPage = () => {
     
     fetchData();
   }, [id]);
+
+  const handleCopyCode = () => {
+    if (organization?.accessCode) {
+      navigator.clipboard.writeText(organization.accessCode);
+      toast({
+        title: "Copied",
+        description: "Access code copied to clipboard.",
+      });
+    }
+  };
+
+  const handleRegenerateCode = async () => {
+    if (!organization?.id) return;
+    
+    try {
+      setIsRegenerating(true);
+      const newCode = await adminApi.regenerateOrganizationCode(organization.id);
+      
+      if (newCode) {
+        setOrganization(prev => prev ? { ...prev, accessCode: newCode } : null);
+        toast({
+          title: "Success",
+          description: "Access code regenerated successfully.",
+        });
+      } else {
+        throw new Error("Failed to regenerate access code");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to regenerate access code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -98,6 +135,36 @@ const OrganizationManagementPage = () => {
                   <div className="space-y-2">
                     <Label htmlFor="name" className="font-poppins">Name</Label>
                     <div className="p-3 bg-muted rounded-md font-montserrat">{organization.name}</div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="accessCode" className="font-poppins">Access Code</Label>
+                    <div className="flex gap-2">
+                      <div className="p-3 bg-muted rounded-md font-montserrat flex-1">
+                        {organization.accessCode || "No access code"}
+                      </div>
+                      <IOSButton 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleCopyCode}
+                        disabled={!organization.accessCode}
+                        className="ios-touch-target"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </IOSButton>
+                      <IOSButton 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleRegenerateCode}
+                        disabled={isRegenerating}
+                        className="ios-touch-target"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                      </IOSButton>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      This code is required for users to join this organization.
+                    </p>
                   </div>
                   
                   <div className="space-y-2">
@@ -160,7 +227,7 @@ const OrganizationManagementPage = () => {
       </main>
     </div>
   );
-};
+}
 
 // Wrap with AdminProtectedRoute to ensure only super admins can access
 export default () => (

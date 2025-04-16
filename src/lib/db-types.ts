@@ -28,6 +28,7 @@ export type Schema = {
   organizations: {
     id?: number;
     name: string;
+    accessCode?: string;
     createdAt?: string;
     updatedAt?: string;
   };
