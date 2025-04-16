@@ -10,8 +10,6 @@ A mobile-friendly appointment scheduling application built with React, TypeScrip
 - Time slot selection with duration options
 - Appointment details (title, description, location)
 - Mobile-responsive design
-- Organization management with locations and appointment types
-- Admin dashboard for managing users and settings
 
 ## Installation
 
@@ -42,20 +40,6 @@ npm run dev
 - SQLite (via Fine SDK)
 - Tailwind CSS
 - shadcn/ui components
-
-## Admin Features
-
-### Organization Settings
-
-- **Appointment Types**: Configure service types with duration and pricing
-- **Locations**: Manage service locations
-- **User Management**: Add and manage organization users
-
-### User Roles
-
-- **Super Admin**: Can manage all organizations and users
-- **Organization Admin**: Can manage their organization's settings and users
-- **User**: Can create and manage appointments
 
 ## Development
 

@@ -1,43 +1,32 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAdminStatus } from "@/hooks/use-admin";
-import { analyticsApi, type LocationAnalytics } from "@/api/analytics";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AdminProtectedRoute } from "@/components/auth/admin-route-components";
+import { analyticsApi } from "@/api/analytics";
 import { locationsApi } from "@/api/locations";
+import { useAdminStatus } from "@/hooks/use-admin";
+import { fine } from "@/lib/fine";
 import { useToast } from "@/hooks/use-toast";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
+import { 
+  BarChart, 
+  Bar, 
+  LineChart, 
+  Line, 
+  PieChart, 
+  Pie, 
   Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
 } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { Calendar, Clock, DollarSign, ArrowLeft, MapPin } from "lucide-react";
 import { IOSButton } from "@/components/ui/ios-button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Clock, DollarSign, ArrowLeft, MapPin } from "lucide-react";
-import { AdminLayout } from "@/components/layout/AdminLayout";
 import type { Schema } from "@/lib/db-types";
 
 // Chart colors
@@ -50,397 +39,260 @@ const LocationAnalyticsPage = () => {
   const { id } = useParams<{ id: string }>();
   const locationId = id ? parseInt(id) : undefined;
   
-  const [analytics, setAnalytics] = useState<LocationAnalytics | null>(null);
-  const [location, setLocation] = useState<Schema["locations"] | null>(null);
+  const [locationData, setLocationData] = useState<Schema["locations"] | null>(null);
+  const [appointmentsData, setAppointmentsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<'30' | '90' | '180' | '365'>('90');
-  const [interval, setInterval] = useState<'day' | 'week' | 'month'>('day');
   
   useEffect(() => {
     const fetchData = async () => {
-      if (!locationId || !organizationId) return;
-      
-      setIsLoading(true);
+      if (!id) return;
       
       try {
-        // Fetch location details
-        const locationData = await locationsApi.getLocationById(locationId);
-        setLocation(locationData);
+        setIsLoading(true);
         
-        // Calculate date range
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - parseInt(dateRange));
+        // Fetch location data
+        const locations = await fine.table("locations")
+          .select()
+          .eq("id", parseInt(id));
         
-        // Fetch analytics
-        const analyticsData = await analyticsApi.getLocationAnalytics(
-          locationId,
-          startDate,
-          endDate,
-          interval
-        );
-        
-        setAnalytics(analyticsData);
+        if (locations && locations.length > 0) {
+          setLocationData(locations[0]);
+          
+          // Fetch appointments for this location
+          const appointments = await fine.table("appointments")
+            .select()
+            .eq("locationId", parseInt(id));
+          
+          setAppointmentsData(appointments);
+        } else {
+          toast({
+            title: "Error",
+            description: "Location not found.",
+            variant: "destructive",
+          });
+          navigate("/admin/analytics");
+        }
       } catch (error) {
-        console.error("Error fetching location analytics:", error);
         toast({
           title: "Error",
           description: "Failed to load location analytics data. Please try again.",
-          variant: "destructive"
+          variant: "destructive",
         });
+        navigate("/admin/analytics");
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchData();
-  }, [locationId, organizationId, dateRange, interval, toast]);
+  }, [id, navigate, toast]);
   
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(value);
+  // Format data for charts
+  const getDayOfWeekData = () => {
+    if (appointmentsData.length === 0) return [];
+    
+    const dayCount: Record<string, number> = {
+      'Sunday': 0,
+      'Monday': 0,
+      'Tuesday': 0,
+      'Wednesday': 0,
+      'Thursday': 0,
+      'Friday': 0,
+      'Saturday': 0
+    };
+    
+    appointmentsData.forEach(appointment => {
+      try {
+        const appointmentDate = new Date(appointment.startTime);
+        const dayOfWeek = appointmentDate.toLocaleDateString('en-US', { weekday: 'long' });
+        dayCount[dayOfWeek] = (dayCount[dayOfWeek] || 0) + 1;
+      } catch {
+        // Skip invalid dates
+      }
+    });
+    
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days.map(day => ({
+      name: day,
+      appointments: dayCount[day] || 0
+    }));
   };
   
-  // Format time duration
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
+  // Get monthly data for the past 6 months
+  const getMonthlyData = () => {
+    if (appointmentsData.length === 0) return [];
     
-    if (hours === 0) {
-      return `${mins} min`;
-    } else if (mins === 0) {
-      return `${hours} hr`;
-    } else {
-      return `${hours} hr ${mins} min`;
+    const monthlyData: Record<string, number> = {};
+    const now = new Date();
+    
+    // Initialize the past 6 months
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(now.getMonth() - i);
+      const monthYear = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      monthlyData[monthYear] = 0;
     }
+    
+    // Count appointments by month
+    appointmentsData.forEach(appointment => {
+      try {
+        const appointmentDate = new Date(appointment.startTime);
+        const monthYear = appointmentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        
+        // Only count if it's within the last 6 months
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(now.getMonth() - 5);
+        
+        if (appointmentDate >= sixMonthsAgo) {
+          monthlyData[monthYear] = (monthlyData[monthYear] || 0) + 1;
+        }
+      } catch {
+        // Skip invalid dates
+      }
+    });
+    
+    return Object.entries(monthlyData).map(([month, count]) => ({
+      month,
+      appointments: count
+    }));
   };
   
   return (
     <AdminLayout>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <IOSButton
-                onClick={() => navigate("/admin/analytics")}
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Analytics
-              </IOSButton>
-            </div>
-            
-            <h1 className="text-3xl font-bold font-montserrat">
-              {isLoading ? (
-                <Skeleton className="h-9 w-64" />
-              ) : (
-                `${location?.name || 'Location'} Analytics`
-              )}
-            </h1>
-            <p className="text-muted-foreground font-montserrat mt-1">
-              {isLoading ? (
-                <Skeleton className="h-5 w-96" />
-              ) : (
-                `Performance metrics for ${location?.address || 'this location'}`
-              )}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Select
-              value={dateRange}
-              onValueChange={(value) => setDateRange(value as '30' | '90' | '180' | '365')}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select date range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-                <SelectItem value="180">Last 180 days</SelectItem>
-                <SelectItem value="365">Last 365 days</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={interval}
-              onValueChange={(value) => setInterval(value as 'day' | 'week' | 'month')}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select interval" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Daily</SelectItem>
-                <SelectItem value="week">Weekly</SelectItem>
-                <SelectItem value="month">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="mb-6">
+          <IOSButton 
+            variant="ghost" 
+            onClick={() => navigate("/admin/analytics")}
+            className="ios-touch-target flex items-center"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Analytics Dashboard
+          </IOSButton>
         </div>
         
+        <h1 className="text-3xl font-bold mb-6 font-poppins">
+          Location Analytics: {locationData?.name || "Location"}
+        </h1>
+        
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {Array(3).fill(0).map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : analytics ? (
-          <>
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <p className="text-center py-8 font-montserrat">Loading location analytics data...</p>
+        ) : (
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Total Appointments
-                  </CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground font-montserrat">Total Appointments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{analytics.metrics.total}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {analytics.metrics.completed} completed, {analytics.metrics.upcoming} upcoming
-                  </p>
+                  <div className="flex items-center">
+                    <div className="mr-4 rounded-full p-2 bg-primary/10">
+                      <Calendar className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold font-poppins">{appointmentsData.length}</div>
+                      <p className="text-xs text-muted-foreground font-montserrat">All time</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Total Revenue
-                  </CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground font-montserrat">Location</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(analytics.metrics.revenue)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Avg. {formatCurrency(analytics.metrics.total > 0 ? analytics.metrics.revenue / analytics.metrics.total : 0)} per appointment
-                  </p>
+                  <div className="flex items-center">
+                    <div className="mr-4 rounded-full p-2 bg-secondary/10">
+                      <MapPin className="h-6 w-6 text-secondary" />
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold font-poppins">{locationData?.name}</div>
+                      <p className="text-xs text-muted-foreground font-montserrat">
+                        {locationData?.address || "No address provided"}
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                    <Clock className="mr-2 h-4 w-4" />
-                    Average Duration
-                  </CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground font-montserrat">Busiest Day</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{formatDuration(analytics.metrics.averageDuration)}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Per appointment
-                  </p>
+                  <div className="flex items-center">
+                    <div className="mr-4 rounded-full p-2 bg-accent/10">
+                      <Calendar className="h-6 w-6 text-accent" />
+                    </div>
+                    <div>
+                      {getDayOfWeekData().length > 0 ? (
+                        <>
+                          <div className="text-xl font-bold font-poppins">
+                            {getDayOfWeekData().sort((a, b) => b.appointments - a.appointments)[0].name}
+                          </div>
+                          <p className="text-xs text-muted-foreground font-montserrat">
+                            {getDayOfWeekData().sort((a, b) => b.appointments - a.appointments)[0].appointments} appointments
+                          </p>
+                        </>
+                      ) : (
+                        <div className="text-lg font-medium font-poppins">No data</div>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
             
-            {/* Location Details */}
-            {location && (
-              <Card className="mb-8">
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <MapPin className="mr-2 h-5 w-5" />
-                    Location Details
-                  </CardTitle>
+                  <CardTitle className="font-poppins">Appointments by Day of Week</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-semibold mb-2">Address</h3>
-                      <p className="text-muted-foreground">
-                        {location.address || 'No address provided'}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-2">Utilization</h3>
-                      <p className="text-muted-foreground">
-                        {analytics.metrics.total} appointments in the selected period
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* Time Series Chart */}
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Appointments Over Time</CardTitle>
-                <CardDescription>
-                  View appointment trends and revenue over the selected period
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={analytics.timeSeriesData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(date) => {
-                          if (interval === 'day') {
-                            return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                          } else if (interval === 'week') {
-                            return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                          } else {
-                            return new Date(date + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                          }
-                        }}
-                      />
-                      <YAxis yAxisId="left" />
-                      <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip 
-                        formatter={(value, name) => {
-                          if (name === 'Revenue') {
-                            return [formatCurrency(value as number), name];
-                          }
-                          return [value, name];
-                        }}
-                        labelFormatter={(label) => {
-                          if (interval === 'day') {
-                            return new Date(label).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-                          } else if (interval === 'week') {
-                            return `Week of ${new Date(label).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
-                          } else {
-                            return new Date(label + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                          }
-                        }}
-                      />
-                      <Legend />
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="count"
-                        name="Appointments"
-                        stroke="#0088FE"
-                        activeDot={{ r: 8 }}
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="revenue"
-                        name="Revenue"
-                        stroke="#00C49F"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Appointment Types */}
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Appointment Types</CardTitle>
-                <CardDescription>
-                  Breakdown of appointments by type at this location
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="h-[300px]">
+                  <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={analytics.appointmentsByType}
-                          dataKey="count"
-                          nameKey="typeName"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label={({ typeName, percent }) => `${typeName}: ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {analytics.appointmentsByType.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value, name, props) => {
-                            return [`${value} appointments`, props.payload.typeName];
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={analytics.appointmentsByType}
-                        layout="vertical"
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
+                      <BarChart data={getDayOfWeekData()} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis type="category" dataKey="typeName" width={150} />
-                        <Tooltip
-                          formatter={(value, name) => {
-                            if (name === 'revenue') {
-                              return [formatCurrency(value as number), 'Revenue'];
-                            }
-                            return [value, name === 'count' ? 'Appointments' : name];
-                          }}
-                        />
-                        <Legend />
-                        <Bar dataKey="revenue" name="Revenue" fill="#00C49F" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="appointments" fill="#5865F2" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
-                
-                <Separator className="my-6" />
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4">Type</th>
-                        <th className="text-right py-3 px-4">Appointments</th>
-                        <th className="text-right py-3 px-4">Revenue</th>
-                        <th className="text-right py-3 px-4">Avg. Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analytics.appointmentsByType.map((type) => (
-                        <tr key={type.typeId} className="border-b">
-                          <td className="py-3 px-4">{type.typeName}</td>
-                          <td className="text-right py-3 px-4">{type.count}</td>
-                          <td className="text-right py-3 px-4">{formatCurrency(type.revenue)}</td>
-                          <td className="text-right py-3 px-4">
-                            {formatCurrency(type.count > 0 ? type.revenue / type.count : 0)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          <Card className="p-6 text-center">
-            <p className="text-muted-foreground">No analytics data available for this location.</p>
-          </Card>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-poppins">Monthly Trend</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={getMonthlyData()} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="appointments" stroke="#EB459E" activeDot={{ r: 8 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
       </div>
     </AdminLayout>
   );
 };
 
-export default LocationAnalyticsPage;
+// Wrap with AdminProtectedRoute to ensure only admins can access
+export default () => (
+  <AdminProtectedRoute Component={LocationAnalyticsPage} />
+);

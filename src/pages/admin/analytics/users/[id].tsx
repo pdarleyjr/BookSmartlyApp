@@ -1,43 +1,32 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AdminProtectedRoute } from "@/components/auth/admin-route-components";
+import { analyticsApi } from "@/api/analytics";
 import { useAdminStatus } from "@/hooks/use-admin";
-import { analyticsApi, type UserAnalytics } from "@/api/analytics";
 import { adminApi } from "@/api/admin";
+import { fine } from "@/lib/fine";
 import { useToast } from "@/hooks/use-toast";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
+import { 
+  BarChart, 
+  Bar, 
+  LineChart, 
+  Line, 
+  PieChart, 
+  Pie, 
   Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
 } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { Calendar, Clock, DollarSign, ArrowLeft } from "lucide-react";
 import { IOSButton } from "@/components/ui/ios-button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Clock, DollarSign, ArrowLeft } from "lucide-react";
-import { AdminLayout } from "@/components/layout/AdminLayout";
 import type { Schema } from "@/lib/db-types";
 
 // Chart colors
@@ -49,8 +38,8 @@ const UserAnalyticsPage = () => {
   const { organizationId } = useAdminStatus();
   const { id } = useParams<{ id: string }>();
   
-  const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
-  const [user, setUser] = useState<Schema["users"] | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [userData, setUserData] = useState<Schema["users"] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<'30' | '90' | '180' | '365'>('90');
   const [interval, setInterval] = useState<'day' | 'week' | 'month'>('day');
@@ -63,24 +52,24 @@ const UserAnalyticsPage = () => {
       
       try {
         // Fetch user details
-        const allUsers = await adminApi.getAllUsers();
-        const userData = allUsers.find(user => user.id === id) || null;
-        setUser(userData);
+        const users = await fine.table("users")
+          .select()
+          .eq("id", id);
         
-        // Calculate date range
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - parseInt(dateRange));
-        
-        // Fetch analytics
-        const analyticsData = await analyticsApi.getUserAnalytics(
-          id,
-          startDate,
-          endDate,
-          interval
-        );
-        
-        setAnalytics(analyticsData);
+        if (users && users.length > 0) {
+          setUserData(users[0]);
+          
+          // Fetch analytics data for this user
+          const data = await analyticsApi.getUserAnalytics(id);
+          setAnalyticsData(data);
+        } else {
+          toast({
+            title: "Error",
+            description: "User not found.",
+            variant: "destructive",
+          });
+          navigate("/admin/analytics");
+        }
       } catch (error) {
         console.error("Error fetching user analytics:", error);
         toast({
@@ -88,39 +77,29 @@ const UserAnalyticsPage = () => {
           description: "Failed to load user analytics data. Please try again.",
           variant: "destructive"
         });
+        navigate("/admin/analytics");
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchData();
-  }, [id, organizationId, dateRange, interval, toast]);
+  }, [id, organizationId, toast, navigate]);
   
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(value);
-  };
-  
-  // Format time duration
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
+  // Format data for charts
+  const getDayOfWeekData = () => {
+    if (!analyticsData) return [];
     
-    if (hours === 0) {
-      return `${mins} min`;
-    } else if (mins === 0) {
-      return `${hours} hr`;
-    } else {
-      return `${hours} hr ${mins} min`;
-    }
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days.map(day => ({
+      name: day,
+      appointments: analyticsData.appointmentsByDay[day] || 0
+    }));
   };
   
   return (
     <AdminLayout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -139,47 +118,16 @@ const UserAnalyticsPage = () => {
               {isLoading ? (
                 <Skeleton className="h-9 w-64" />
               ) : (
-                `${user?.name || 'Staff Member'} Analytics`
+                `${userData?.name || userData?.email || 'User'} Analytics`
               )}
             </h1>
             <p className="text-muted-foreground font-montserrat mt-1">
               {isLoading ? (
                 <Skeleton className="h-5 w-96" />
               ) : (
-                `Performance metrics for ${user?.email || 'staff member'}`
+                `Performance metrics for ${userData?.email || 'this user'}`
               )}
             </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Select
-              value={dateRange}
-              onValueChange={(value) => setDateRange(value as '30' | '90' | '180' | '365')}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select date range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-                <SelectItem value="180">Last 180 days</SelectItem>
-                <SelectItem value="365">Last 365 days</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={interval}
-              onValueChange={(value) => setInterval(value as 'day' | 'week' | 'month')}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select interval" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Daily</SelectItem>
-                <SelectItem value="week">Weekly</SelectItem>
-                <SelectItem value="month">Monthly</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
         
@@ -197,7 +145,7 @@ const UserAnalyticsPage = () => {
               </Card>
             ))}
           </div>
-        ) : analytics ? (
+        ) : analyticsData ? (
           <>
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -209,9 +157,9 @@ const UserAnalyticsPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{analytics.metrics.total}</div>
+                  <div className="text-3xl font-bold">{analyticsData.totalAppointments}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {analytics.metrics.completed} completed, {analytics.metrics.upcoming} upcoming
+                    All time
                   </p>
                 </CardContent>
               </Card>
@@ -219,14 +167,14 @@ const UserAnalyticsPage = () => {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Total Revenue
+                    <Calendar className="mr-2 h-4 w-4" />
+                    This Month
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(analytics.metrics.revenue)}</div>
+                  <div className="text-3xl font-bold">{analyticsData.appointmentsThisMonth}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Avg. {formatCurrency(analytics.metrics.total > 0 ? analytics.metrics.revenue / analytics.metrics.total : 0)} per appointment
+                    Current month
                   </p>
                 </CardContent>
               </Card>
@@ -239,175 +187,102 @@ const UserAnalyticsPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{formatDuration(analytics.metrics.averageDuration)}</div>
+                  <div className="text-3xl font-bold">{analyticsData.averageDuration}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Per appointment
+                    Minutes per appointment
                   </p>
                 </CardContent>
               </Card>
             </div>
             
-            {/* Time Series Chart */}
+            {/* Charts */}
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle>Appointments Over Time</CardTitle>
+                <CardTitle>Appointments by Day of Week</CardTitle>
                 <CardDescription>
-                  View appointment trends and revenue over the selected period
+                  Distribution of appointments across different days of the week
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={analytics.timeSeriesData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    <BarChart
+                      data={getDayOfWeekData()}
+                      margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(date) => {
-                          if (interval === 'day') {
-                            return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                          } else if (interval === 'week') {
-                            return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                          } else {
-                            return new Date(date + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                          }
-                        }}
-                      />
-                      <YAxis yAxisId="left" />
-                      <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip 
-                        formatter={(value, name) => {
-                          if (name === 'Revenue') {
-                            return [formatCurrency(value as number), name];
-                          }
-                          return [value, name];
-                        }}
-                        labelFormatter={(label) => {
-                          if (interval === 'day') {
-                            return new Date(label).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-                          } else if (interval === 'week') {
-                            return `Week of ${new Date(label).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
-                          } else {
-                            return new Date(label + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                          }
-                        }}
-                      />
-                      <Legend />
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="count"
-                        name="Appointments"
-                        stroke="#0088FE"
-                        activeDot={{ r: 8 }}
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="revenue"
-                        name="Revenue"
-                        stroke="#00C49F"
-                      />
-                    </LineChart>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="appointments" fill="#5865F2" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
             
             {/* Appointment Types */}
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Appointment Types</CardTitle>
-                <CardDescription>
-                  Breakdown of appointments by type
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {analyticsData.appointmentsByType && analyticsData.appointmentsByType.length > 0 && (
+              <Card className="mb-8">
+                <CardHeader>
+                  <CardTitle>Appointment Types</CardTitle>
+                  <CardDescription>
+                    Breakdown of appointments by type
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={analytics.appointmentsByType}
+                          data={analyticsData.appointmentsByType}
                           dataKey="count"
-                          nameKey="typeName"
+                          nameKey="name"
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
-                          label={({ typeName, percent }) => `${typeName}: ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         >
-                          {analytics.appointmentsByType.map((entry, index) => (
+                          {analyticsData.appointmentsByType.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
                         <Tooltip
                           formatter={(value, name, props) => {
-                            return [`${value} appointments`, props.payload.typeName];
+                            return [`${value} appointments`, props.payload.name];
                           }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                   
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={analytics.appointmentsByType}
-                        layout="vertical"
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis type="category" dataKey="typeName" width={150} />
-                        <Tooltip
-                          formatter={(value, name) => {
-                            if (name === 'revenue') {
-                              return [formatCurrency(value as number), 'Revenue'];
-                            }
-                            return [value, name === 'count' ? 'Appointments' : name];
-                          }}
-                        />
-                        <Legend />
-                        <Bar dataKey="revenue" name="Revenue" fill="#00C49F" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                
-                <Separator className="my-6" />
-                
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4">Type</th>
-                        <th className="text-right py-3 px-4">Appointments</th>
-                        <th className="text-right py-3 px-4">Revenue</th>
-                        <th className="text-right py-3 px-4">Avg. Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analytics.appointmentsByType.map((type) => (
-                        <tr key={type.typeId} className="border-b">
-                          <td className="py-3 px-4">{type.typeName}</td>
-                          <td className="text-right py-3 px-4">{type.count}</td>
-                          <td className="text-right py-3 px-4">{formatCurrency(type.revenue)}</td>
-                          <td className="text-right py-3 px-4">
-                            {formatCurrency(type.count > 0 ? type.revenue / type.count : 0)}
-                          </td>
+                  <Separator className="my-6" />
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4">Type</th>
+                          <th className="text-right py-3 px-4">Appointments</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+                      </thead>
+                      <tbody>
+                        {analyticsData.appointmentsByType.map((type) => (
+                          <tr key={type.name} className="border-b">
+                            <td className="py-3 px-4">{type.name}</td>
+                            <td className="text-right py-3 px-4">{type.count}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         ) : (
           <Card className="p-6 text-center">
-            <p className="text-muted-foreground">No analytics data available for this staff member.</p>
+            <p className="text-muted-foreground">No analytics data available for this user.</p>
           </Card>
         )}
       </div>
@@ -415,4 +290,7 @@ const UserAnalyticsPage = () => {
   );
 };
 
-export default UserAnalyticsPage;
+// Wrap with AdminProtectedRoute to ensure only admins can access
+export default () => (
+  <AdminProtectedRoute Component={UserAnalyticsPage} />
+);
