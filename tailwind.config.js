@@ -17,63 +17,171 @@ export default {
         montserrat: ['Montserrat', 'sans-serif'],
       },
       colors: {
-        // Pastel color palette
-        pastel: {
-          pink: '#FFD6E0',
-          peach: '#FFEFCF',
-          mint: '#C1E7D9',
-          lavender: '#D4C1EC',
-          sky: '#C1D3EC',
-          coral: '#FFBCAD',
-          lemon: '#FFFACD',
-          lime: '#D8F0C8',
+        // Discord-inspired colors
+        discord: {
+          blurple: '#5865F2',
+          green: '#57F287',
+          yellow: '#FEE75C',
+          fuchsia: '#EB459E',
+          red: '#ED4245',
+          white: '#FFFFFF',
+          black: '#000000',
+          primary: '#5865F2',
+          secondary: '#4E5058',
+          tertiary: '#36393F',
+          background: '#36393F',
+          channelsBg: '#2F3136',
+          membersBg: '#2F3136',
+          chatInputBg: '#40444B',
+          backgroundFloating: '#18191C',
+          backgroundModifierHover: 'rgba(79, 84, 92, 0.16)',
+          backgroundModifierActive: 'rgba(79, 84, 92, 0.24)',
+          backgroundModifierSelected: 'rgba(79, 84, 92, 0.32)',
+          backgroundModifierAccent: 'rgba(79, 84, 92, 0.48)',
+          textNormal: '#DCDDDE',
+          textMuted: '#A3A6AA',
+          textLink: '#00AFF4',
         },
-        // Keep existing colors
-        black: '#000000',
-        white: '#ffffff',
-        coral: '#ff5733',
-        yellow: '#ffc733',
-        blue: '#3349ff',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        // Modern gradient colors
+        gradient: {
+          blue: '#5865F2',
+          purple: '#8B5CF6',
+          pink: '#EC4899',
+          indigo: '#6366F1',
+          violet: '#8B5CF6',
+          fuchsia: '#D946EF',
+          rose: '#F43F5E',
+          amber: '#F59E0B',
+          emerald: '#10B981',
+          cyan: '#06B6D4',
+        },
+        // Glass effect colors
+        glass: {
+          light: 'rgba(255, 255, 255, 0.1)',
+          medium: 'rgba(255, 255, 255, 0.15)',
+          heavy: 'rgba(255, 255, 255, 0.25)',
+          dark: 'rgba(0, 0, 0, 0.1)',
+          darkMedium: 'rgba(0, 0, 0, 0.15)',
+          darkHeavy: 'rgba(0, 0, 0, 0.25)',
+        },
+        // Updated app colors
+        background: '#F9FAFB',
+        foreground: '#333333',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))'
+          DEFAULT: '#5865F2', // Discord blurple
+          foreground: '#FFFFFF'
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
+          DEFAULT: '#EB459E', // Discord fuchsia
+          foreground: '#FFFFFF'
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))'
+          DEFAULT: '#57F287', // Discord green
+          foreground: '#FFFFFF'
         },
+        success: '#57F287', // Discord green
+        warning: '#FEE75C', // Discord yellow
+        error: '#ED4245',   // Discord red
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))'
+          DEFAULT: 'rgba(79, 84, 92, 0.16)',
+          foreground: '#A3A6AA'
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))'
+          DEFAULT: 'rgba(255, 255, 255, 0.1)',
+          foreground: '#DCDDDE'
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))'
+          DEFAULT: 'rgba(47, 49, 54, 0.95)',
+          foreground: '#DCDDDE'
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))'
+          DEFAULT: '#ED4245',
+          foreground: '#FFFFFF'
         },
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
+        border: 'rgba(79, 84, 92, 0.24)',
+        input: 'rgba(79, 84, 92, 0.16)',
+        ring: '#5865F2',
+      },
+      backgroundImage: {
+        'gradient-discord': 'linear-gradient(to bottom right, #5865F2, #EB459E)',
+        'gradient-discord-alt': 'linear-gradient(to bottom right, #5865F2, #8B5CF6, #EB459E)',
+        'gradient-blurple': 'linear-gradient(to right, #5865F2, #8B5CF6)',
+        'gradient-fuchsia': 'linear-gradient(to right, #EB459E, #D946EF)',
+        'gradient-green': 'linear-gradient(to right, #57F287, #10B981)',
+        'gradient-blue-purple': 'linear-gradient(to bottom right, #5865F2, #8B5CF6)',
+        'gradient-purple-pink': 'linear-gradient(to bottom right, #8B5CF6, #EC4899)',
+        'gradient-blue-cyan': 'linear-gradient(to bottom right, #5865F2, #06B6D4)',
+        'gradient-cyan-green': 'linear-gradient(to bottom right, #06B6D4, #10B981)',
+        'noise': 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
+      },
+      boxShadow: {
+        'discord': '0 8px 16px rgba(0, 0, 0, 0.24)',
+        'discord-lg': '0 8px 24px rgba(0, 0, 0, 0.32)',
+        'discord-xl': '0 12px 32px rgba(0, 0, 0, 0.4)',
+        'glass': '0 4px 12px rgba(0, 0, 0, 0.1)',
+        'glass-lg': '0 8px 32px rgba(0, 0, 0, 0.12)',
+        'inner-glow': 'inset 0 0 8px rgba(255, 255, 255, 0.05)',
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)'
+        'discord': '8px',
+        'discord-lg': '16px',
+        'discord-xl': '24px',
+        'full': '9999px',
+      },
+      backdropBlur: {
+        'xs': '2px',
+        'sm': '4px',
+        'md': '8px',
+        'lg': '12px',
+        'xl': '16px',
+        '2xl': '24px',
       },
     }
   },
-  plugins: [import("tailwindcss-animate")],
+  plugins: [
+    import("tailwindcss-animate"),
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.glass': {
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.125)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        },
+        '.glass-dark': {
+          backgroundColor: 'rgba(47, 49, 54, 0.75)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        },
+        '.glass-card': {
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(12px)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.125)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        },
+        '.noise': {
+          position: 'relative',
+        },
+        '.noise::before': {
+          content: '""',
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          width: '100%',
+          height: '100%',
+          opacity: '0.05',
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
+          pointerEvents: 'none',
+        },
+        '.inner-border': {
+          boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.1)',
+        },
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 };

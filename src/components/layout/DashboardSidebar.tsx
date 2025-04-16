@@ -25,13 +25,24 @@ const SidebarItem = ({ to, icon: Icon, label, collapsed }: SidebarItemProps) => 
   <NavLink
     to={to}
     className={({ isActive }) => cn(
-      "flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-      isActive ? "bg-coral/10 text-coral" : "hover:bg-muted",
+      "flex items-center gap-3 px-4 py-3 rounded-lg transition-all active:scale-95",
+      isActive
+        ? "bg-discord-backgroundModifierSelected text-discord-blurple"
+        : "hover:bg-discord-backgroundModifierHover text-discord-textNormal",
       collapsed ? "justify-center" : ""
     )}
   >
-    <Icon className="h-5 w-5 flex-shrink-0" />
-    {!collapsed && <span className="font-poppins">{label}</span>}
+    {({ isActive }) => (
+      <>
+        <div className={cn(
+          "flex items-center justify-center",
+          isActive ? "text-discord-blurple" : "text-discord-textMuted"
+        )}>
+          <Icon className="h-5 w-5 flex-shrink-0" />
+        </div>
+        {!collapsed && <span className="font-poppins">{label}</span>}
+      </>
+    )}
   </NavLink>
 );
 
@@ -48,19 +59,19 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
   
   return (
     <aside className={cn(
-      "bg-background border-r h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto transition-all",
+      "glass-card-dark border-r border-discord-backgroundModifierAccent h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto transition-all shadow-discord",
       collapsed ? "w-16" : "w-64"
     )}>
       <div className="p-4">
         <div className="flex items-center justify-between mb-6">
           {!collapsed && (
-            <h2 className="text-lg font-bold font-poppins">BookSmartly</h2>
+            <h2 className="text-lg font-bold font-poppins bg-gradient-blurple bg-clip-text text-transparent">BookSmartly</h2>
           )}
-          <button 
+          <button
             onClick={onToggle}
-            className="p-2 rounded-full hover:bg-muted"
+            className="p-2 rounded-full hover:bg-discord-backgroundModifierHover active:scale-95 transition-transform"
           >
-            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+            {collapsed ? <ChevronRight className="h-5 w-5 text-discord-textMuted" /> : <ChevronLeft className="h-5 w-5 text-discord-textMuted" />}
           </button>
         </div>
         
@@ -74,7 +85,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
             <SidebarItem to="/admin" icon={Users} label="Admin" collapsed={collapsed} />
           )}
           
-          <div className="pt-4 mt-4 border-t">
+          <div className="pt-4 mt-4 border-t border-discord-backgroundModifierAccent">
             <SidebarItem to="/settings" icon={Settings} label="Settings" collapsed={collapsed} />
             <SidebarItem to="/help" icon={HelpCircle} label="Help & Support" collapsed={collapsed} />
           </div>
@@ -83,13 +94,13 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       
       {!collapsed && (
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-            <div className="w-8 h-8 rounded-full bg-coral flex items-center justify-center text-white">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-discord-backgroundModifierHover backdrop-blur-md">
+            <div className="w-8 h-8 rounded-full bg-gradient-blurple flex items-center justify-center text-white shadow-inner-glow">
               {session.user.name ? session.user.name.charAt(0).toUpperCase() : "U"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{session.user.name || session.user.email}</p>
-              <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+              <p className="text-sm font-medium truncate text-discord-textNormal">{session.user.name || session.user.email}</p>
+              <p className="text-xs text-discord-textMuted truncate">{session.user.email}</p>
             </div>
           </div>
         </div>

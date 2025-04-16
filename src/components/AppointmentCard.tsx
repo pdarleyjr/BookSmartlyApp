@@ -55,7 +55,7 @@ export function AppointmentCard({ appointment, onDelete }: AppointmentProps) {
         description: "Your appointment has been successfully deleted.",
       });
       onDelete();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete appointment. Please try again.",
@@ -69,7 +69,7 @@ export function AppointmentCard({ appointment, onDelete }: AppointmentProps) {
   const formatTime = (timeString: string) => {
     try {
       return format(parseISO(timeString), "h:mm a");
-    } catch (e) {
+    } catch {
       return timeString;
     }
   };
@@ -77,14 +77,14 @@ export function AppointmentCard({ appointment, onDelete }: AppointmentProps) {
   const formatDate = (timeString: string) => {
     try {
       return format(parseISO(timeString), "EEEE, MMMM d, yyyy");
-    } catch (e) {
+    } catch {
       return timeString;
     }
   };
 
   return (
-    <Card className="ios-card w-full overflow-hidden border-none shadow-md">
-      <div className="h-2 bg-coral w-full" />
+    <Card className="ios-card w-full overflow-hidden border-none shadow-sm rounded-xl active:scale-[0.98] transition-transform">
+      <div className="h-2 bg-primary w-full" />
       <CardHeader className="pt-4">
         <CardTitle className="text-xl font-poppins">{appointment.title}</CardTitle>
         <CardDescription className="flex items-center gap-1 mt-1 font-montserrat">
@@ -98,37 +98,40 @@ export function AppointmentCard({ appointment, onDelete }: AppointmentProps) {
         )}
         <div className="flex flex-col gap-2 text-sm font-montserrat">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-primary" />
+            </div>
             <span>
               {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
             </span>
           </div>
           {appointment.location && (
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center">
+                <MapPin className="h-4 w-4 text-secondary" />
+              </div>
               <span>{appointment.location}</span>
             </div>
           )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-2 pb-4">
-        <IOSButton 
-          variant="outline" 
-          size="sm" 
+        <IOSButton
+          variant="outline"
+          size="sm"
           onClick={() => navigate(`/edit-appointment/${appointment.id}`)}
-          className="ios-touch-target"
         >
           <Edit className="h-4 w-4 mr-1" />
           Edit
         </IOSButton>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <IOSButton variant="destructive" size="sm" disabled={isDeleting} className="ios-touch-target">
+            <IOSButton variant="destructive" size="sm" disabled={isDeleting}>
               <Trash2 className="h-4 w-4 mr-1" />
               Delete
             </IOSButton>
           </AlertDialogTrigger>
-          <AlertDialogContent className="ios-card">
+          <AlertDialogContent className="ios-card rounded-xl">
             <AlertDialogHeader>
               <AlertDialogTitle className="font-poppins">Are you sure?</AlertDialogTitle>
               <AlertDialogDescription className="font-montserrat">
@@ -136,8 +139,8 @@ export function AppointmentCard({ appointment, onDelete }: AppointmentProps) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="ios-touch-target font-montserrat">Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="ios-touch-target bg-coral font-montserrat">
+              <AlertDialogCancel className="font-montserrat">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive font-montserrat">
                 {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>

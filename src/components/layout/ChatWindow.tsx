@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { MessageSquare, X, ChevronUp, ChevronDown, Send } from "lucide-react";
+import { MessageSquare, X, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ export function ChatWindow({ isOpen, onToggle, height, onResize }: ChatWindowPro
     return (
       <button
         onClick={onToggle}
-        className="fixed bottom-4 right-4 bg-coral text-white rounded-full p-3 shadow-lg"
+        className="fixed bottom-4 right-4 bg-gradient-blurple text-white rounded-full p-3 shadow-discord active:scale-95 transition-transform"
       >
         <MessageSquare className="h-6 w-6" />
       </button>
@@ -79,39 +79,42 @@ export function ChatWindow({ isOpen, onToggle, height, onResize }: ChatWindowPro
   }
   
   return (
-    <div 
-      className="fixed bottom-0 right-4 bg-white rounded-t-lg shadow-lg border overflow-hidden flex flex-col"
+    <div
+      className="fixed bottom-0 right-4 glass-card-dark rounded-t-discord-lg shadow-discord-lg overflow-hidden flex flex-col border border-discord-backgroundModifierAccent"
       style={{ width: '350px', height: `${height}px` }}
     >
       {/* Resize handle */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize bg-transparent hover:bg-muted"
+      <div
+        className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize bg-transparent hover:bg-discord-backgroundModifierHover"
         onMouseDown={handleDragStart}
       />
       
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-coral text-white">
+      <div className="flex items-center justify-between p-3 border-b border-discord-backgroundModifierAccent bg-gradient-blurple text-white">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
           <h3 className="font-medium">AI Assistant</h3>
         </div>
         <div className="flex items-center">
-          <button onClick={onToggle} className="p-1 rounded-full hover:bg-white/20">
+          <button
+            onClick={onToggle}
+            className="p-1 rounded-full hover:bg-white/20 active:scale-95 transition-transform"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
       </div>
       
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-discord-backgroundFloating/50">
         {messages.map((message, index) => (
-          <div 
+          <div
             key={index}
             className={cn(
-              "max-w-[80%] p-3 rounded-lg",
-              message.isUser 
-                ? "bg-coral text-white ml-auto rounded-br-none" 
-                : "bg-muted rounded-bl-none"
+              "max-w-[80%] p-3 rounded-lg shadow-glass",
+              message.isUser
+                ? "bg-gradient-blurple text-white ml-auto rounded-br-none"
+                : "bg-discord-backgroundModifierHover text-discord-textNormal rounded-bl-none"
             )}
           >
             {message.text}
@@ -120,18 +123,18 @@ export function ChatWindow({ isOpen, onToggle, height, onResize }: ChatWindowPro
       </div>
       
       {/* Input */}
-      <div className="p-3 border-t flex gap-2">
+      <div className="p-3 border-t border-discord-backgroundModifierAccent bg-discord-backgroundFloating/80 flex gap-2">
         <Input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
-          className="flex-1"
+          className="flex-1 bg-discord-chatInputBg border-discord-backgroundModifierAccent text-discord-textNormal placeholder:text-discord-textMuted"
         />
-        <Button 
-          onClick={handleSendMessage} 
-          size="icon" 
-          className="bg-coral hover:bg-coral/90 text-white"
+        <Button
+          onClick={handleSendMessage}
+          size="icon"
+          className="bg-gradient-blurple hover:opacity-90 text-white active:scale-95 transition-transform"
         >
           <Send className="h-4 w-4" />
         </Button>

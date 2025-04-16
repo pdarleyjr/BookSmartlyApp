@@ -5,12 +5,13 @@ import { Layout } from "@/components/layout/Layout";
 import { CalendarView } from "@/components/CalendarView";
 import { AppointmentCard } from "@/components/AppointmentCard";
 import { IOSButton } from "@/components/ui/ios-button";
-import { Plus, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, User } from "lucide-react";
 import { fine } from "@/lib/fine";
 import { useToast } from "@/hooks/use-toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchAppointments, fetchAppointmentsByDateRange, setSelectedDate } from "@/redux/slices/appointmentsSlice";
 import { ProtectedRoute } from "@/components/auth/route-components";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const [selectedDate, setSelectedDateState] = useState(new Date());
@@ -20,6 +21,15 @@ const Dashboard = () => {
   const { data: session } = fine.auth.useSession();
   const dispatch = useAppDispatch();
   const appointments = useAppSelector(state => state.appointments.items);
+  const isMobile = useIsMobile();
+  
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
   
   // Get appointments for the selected date
   const appointmentsForSelectedDate = appointments.filter(appointment => {
@@ -30,7 +40,7 @@ const Dashboard = () => {
         appointmentDate.getMonth() === selectedDate.getMonth() &&
         appointmentDate.getFullYear() === selectedDate.getFullYear()
       );
-    } catch (e) {
+    } catch {
       return false;
     }
   }).sort((a, b) => {
@@ -56,7 +66,7 @@ const Dashboard = () => {
           startDate: monthStart.toISOString(),
           endDate: monthEnd.toISOString()
         })).unwrap();
-      } catch (error) {
+      } catch {
         toast({
           title: "Error",
           description: "Failed to load appointments. Please try again.",
@@ -96,21 +106,37 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-6 md:py-8">
+        {/* Mobile Greeting Header */}
+        {isMobile && session?.user && (
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold font-poppins mb-1">
+              {getGreeting()}, {session.user.name?.split(' ')[0] || 'there'}!
+            </h1>
+            <p className="text-muted-foreground font-montserrat">
+              {appointmentsForSelectedDate.length > 0
+                ? `You have ${appointmentsForSelectedDate.length} appointment${appointmentsForSelectedDate.length > 1 ? 's' : ''} today.`
+                : 'No appointments scheduled for today.'}
+            </p>
+          </div>
+        )}
+        
         <div className="flex flex-col md:flex-row gap-6">
           {/* Calendar Column */}
           <div className="w-full md:w-7/12 lg:w-8/12">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold font-poppins">Calendar</h1>
-              <IOSButton 
-                onClick={() => navigate("/create-appointment")}
-                className="ios-touch-target bg-coral text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Appointment
-              </IOSButton>
-            </div>
+            {!isMobile && (
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl font-bold font-poppins">Calendar</h1>
+                <IOSButton
+                  onClick={() => navigate("/create-appointment")}
+                  className="ios-touch-target"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Appointment
+                </IOSButton>
+              </div>
+            )}
             
-            <CalendarView 
+            <CalendarView
               appointments={appointments}
               onDateSelect={handleDateSelect}
               selectedDate={selectedDate}
@@ -130,23 +156,22 @@ const Dashboard = () => {
             ) : appointmentsForSelectedDate.length > 0 ? (
               <div className="space-y-4">
                 {appointmentsForSelectedDate.map((appointment) => (
-                  <AppointmentCard 
-                    key={appointment.id} 
+                  <AppointmentCard
+                    key={appointment.id}
                     appointment={appointment}
                     onDelete={handleRefresh}
                   />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 border rounded-lg bg-muted/30">
+              <div className="text-center py-8 border rounded-xl bg-muted/30 shadow-sm">
                 <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                 <h3 className="text-lg font-medium mb-2 font-poppins">No appointments</h3>
                 <p className="text-muted-foreground mb-4 font-montserrat">
                   You don't have any appointments scheduled for this day.
                 </p>
-                <IOSButton 
+                <IOSButton
                   onClick={() => navigate("/create-appointment")}
-                  className="ios-touch-target bg-coral text-white"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Appointment
@@ -155,6 +180,37 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+        
+        {/* Mobile Floating Action Button */}
+        {isMobile && (
+          <div className="fixed bottom-20 right-4 z-40">
+            <IOSButton
+              onClick={() => navigate("/create-appointment")}
+              size="icon"
+              className="rounded-full shadow-lg"
+            >
+              <Plus className="h-6 w-6" />
+            </IOSButton>
+          </div>
+        )}
+        
+        {/* Mobile Bottom Navigation */}
+        {isMobile && (
+          <div className="fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around items-center p-2 z-30">
+            <button className="flex flex-col items-center justify-center p-2 rounded-lg active:scale-95 transition-transform min-w-[64px]">
+              <CalendarIcon className="h-6 w-6 text-primary mb-1" />
+              <span className="text-xs">Calendar</span>
+            </button>
+            <button className="flex flex-col items-center justify-center p-2 rounded-lg active:scale-95 transition-transform min-w-[64px]">
+              <Clock className="h-6 w-6 text-muted-foreground mb-1" />
+              <span className="text-xs text-muted-foreground">Schedule</span>
+            </button>
+            <button className="flex flex-col items-center justify-center p-2 rounded-lg active:scale-95 transition-transform min-w-[64px]">
+              <User className="h-6 w-6 text-muted-foreground mb-1" />
+              <span className="text-xs text-muted-foreground">Profile</span>
+            </button>
+          </div>
+        )}
       </div>
     </Layout>
   );
