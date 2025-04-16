@@ -20,10 +20,11 @@ export function useAdminStatus() {
       try {
         // Special case for pdarleyjr@gmail.com - always super admin
         if (session.user.email === 'pdarleyjr@gmail.com') {
+          console.log("Setting pdarleyjr@gmail.com as super admin");
           setIsAdmin(true);
           setIsSuperAdmin(true);
           setIsOrgAdmin(false);
-          setOrganizationId(null);
+          setOrganizationId(1); // Set a default organization ID
           setIsLoading(false);
           return;
         }
@@ -38,10 +39,11 @@ export function useAdminStatus() {
         
         // Special case for pdarleyjr@gmail.com - always super admin
         if (session.user.email === 'pdarleyjr@gmail.com') {
+          console.log("Setting pdarleyjr@gmail.com as super admin (in catch block)");
           setIsAdmin(true);
           setIsSuperAdmin(true);
           setIsOrgAdmin(false);
-          setOrganizationId(null);
+          setOrganizationId(1); // Set a default organization ID
         }
       } finally {
         setIsLoading(false);
