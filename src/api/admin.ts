@@ -357,13 +357,22 @@ export const adminApi = {
    * Update user organization
    * @param userId - The user ID
    * @param organizationId - The organization ID
+   * @param approved - Whether the user is approved (defaults to false for new requests)
    * @returns Promise with success status
    */
-  updateUserOrganization: async (userId: string, organizationId: number | null): Promise<boolean> => {
+  updateUserOrganization: async (
+    userId: string,
+    organizationId: number | null,
+    approved: boolean = false
+  ): Promise<boolean> => {
     try {
       try {
         await fine.table("users")
-          .update({ organizationId, updatedAt: new Date().toISOString() })
+          .update({
+            organizationId,
+            organizationApproved: approved,
+            updatedAt: new Date().toISOString()
+          })
           .eq("id", userId);
         
         return true;
@@ -374,6 +383,27 @@ export const adminApi = {
       }
     } catch (error) {
       console.error(`Error updating organization for user ${userId}:`, error);
+      return false;
+    }
+  },
+
+  /**
+   * Approve a user's organization access
+   * @param userId - The user ID to approve
+   * @returns Promise with success status
+   */
+  approveUserOrganization: async (userId: string): Promise<boolean> => {
+    try {
+      await fine.table("users")
+        .update({
+          organizationApproved: true,
+          updatedAt: new Date().toISOString()
+        })
+        .eq("id", userId);
+      
+      return true;
+    } catch (error) {
+      console.error(`Error approving user ${userId}:`, error);
       return false;
     }
   },

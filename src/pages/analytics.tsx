@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminStatus } from "@/hooks/use-admin";
 import { adminApi } from "@/api/admin";
+import { analyticsApi } from "@/api/analytics";
 import { useToast } from "@/hooks/use-toast";
 import {
   LineChart,
@@ -98,7 +99,7 @@ const AnalyticsDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: session } = fine.auth.useSession();
-  const { isAdmin, isSuperAdmin, isOrgAdmin, organizationId, isLoading: isAdminLoading } = useAdminStatus();
+  const { isAdmin, isSuperAdmin, isOrgAdmin, organizationId, isOrgApproved, isLoading: isAdminLoading } = useAdminStatus();
   
   const [organizations, setOrganizations] = useState<Schema["organizations"][]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
@@ -107,17 +108,26 @@ const AnalyticsDashboard = () => {
   const [dateRange, setDateRange] = useState<'30' | '90' | '180' | '365'>('90');
   const [interval, setInterval] = useState<'day' | 'week' | 'month'>('day');
   
-  // Redirect non-admin users
+  // Redirect non-admin users or unapproved users
   useEffect(() => {
-    if (!isAdminLoading && !isAdmin && !isSuperAdmin && !isOrgAdmin && session?.user?.email !== 'pdarleyjr@gmail.com') {
-      navigate('/');
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to view analytics.",
-        variant: "destructive"
-      });
+    if (!isAdminLoading) {
+      if (!isAdmin && !isSuperAdmin && !isOrgAdmin && session?.user?.email !== 'pdarleyjr@gmail.com') {
+        navigate('/');
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to view analytics.",
+          variant: "destructive"
+        });
+      } else if (isOrgAdmin && !isOrgApproved) {
+        navigate('/');
+        toast({
+          title: "Access Pending",
+          description: "Your organization access is pending approval.",
+          variant: "destructive"
+        });
+      }
     }
-  }, [isAdmin, isSuperAdmin, isOrgAdmin, isAdminLoading, navigate, toast, session?.user?.email]);
+  }, [isAdmin, isSuperAdmin, isOrgAdmin, isOrgApproved, isAdminLoading, navigate, toast, session?.user?.email]);
   
   // Fetch organizations for super admin
   useEffect(() => {
@@ -155,49 +165,47 @@ const AnalyticsDashboard = () => {
         return;
       }
       
-      if (!isAdmin && !isSuperAdmin && !isOrgAdmin) {
+      if (!isAdmin && !isSuperAdmin && !isOrgAdmin && session?.user?.email !== 'pdarleyjr@gmail.com') {
+        return;
+      }
+      
+      if (!selectedOrgId) {
+        console.log("No organization selected");
+        setAnalytics(null);
+        setIsLoading(false);
         return;
       }
       
       setIsLoading(true);
       
       try {
-        // For now, use mock data until the API is fully implemented
-        const mockData: AnalyticsData = {
-          metrics: {
-            total: 25,
-            completed: 20,
-            upcoming: 5,
-            revenue: 2500,
-            averageDuration: 60
-          },
-          timeSeriesData: [
-            { date: '2025-04-01', count: 3, revenue: 300 },
-            { date: '2025-04-02', count: 2, revenue: 200 },
-            { date: '2025-04-03', count: 4, revenue: 400 },
-            { date: '2025-04-04', count: 1, revenue: 100 },
-            { date: '2025-04-05', count: 5, revenue: 500 },
-            { date: '2025-04-06', count: 3, revenue: 300 },
-            { date: '2025-04-07', count: 2, revenue: 200 },
-            { date: '2025-04-08', count: 5, revenue: 500 }
-          ],
-          appointmentsByType: [
-            { typeId: 1, typeName: 'Consultation', count: 10, revenue: 1000 },
-            { typeId: 2, typeName: 'Follow-up', count: 8, revenue: 800 },
-            { typeId: 3, typeName: 'Treatment', count: 7, revenue: 700 }
-          ],
-          appointmentsByLocation: [
-            { locationId: 1, locationName: 'Main Office', count: 15, revenue: 1500 },
-            { locationId: 2, locationName: 'Branch Office', count: 10, revenue: 1000 }
-          ],
-          appointmentsByUser: [
-            { userId: '1', userName: 'Dr. Smith', count: 12, revenue: 1200 },
-            { userId: '2', userName: 'Dr. Johnson', count: 8, revenue: 800 },
-            { userId: '3', userName: 'Dr. Williams', count: 5, revenue: 500 }
-          ]
-        };
+        // Calculate date range
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - parseInt(dateRange));
         
-        setAnalytics(mockData);
+        // Fetch real analytics data from the API
+        const data = await analyticsApi.getOrganizationAnalytics(
+          selectedOrgId,
+          startDate,
+          endDate,
+          interval
+        );
+        
+        if (data) {
+          // Convert the API response to our component's expected format
+          const analyticsData: AnalyticsData = {
+            metrics: data.metrics,
+            timeSeriesData: data.timeSeriesData,
+            appointmentsByType: data.appointmentsByType,
+            appointmentsByLocation: data.appointmentsByLocation,
+            appointmentsByUser: data.appointmentsByUser
+          };
+          
+          setAnalytics(analyticsData);
+        } else {
+          setAnalytics(null);
+        }
       } catch (error) {
         console.error("Error fetching analytics:", error);
         toast({
@@ -205,13 +213,14 @@ const AnalyticsDashboard = () => {
           description: "Failed to load analytics data. Please try again.",
           variant: "destructive"
         });
+        setAnalytics(null);
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchAnalytics();
-  }, [session?.user?.id, dateRange, interval, isAdmin, isSuperAdmin, isOrgAdmin, isAdminLoading, organizationId, toast]);
+  }, [session?.user?.id, dateRange, interval, isAdmin, isSuperAdmin, isOrgAdmin, isAdminLoading, selectedOrgId, toast, session?.user?.email]);
   
   // Format currency
   const formatCurrency = (value: number) => {
@@ -235,8 +244,11 @@ const AnalyticsDashboard = () => {
     }
   };
   
-  // If not an admin, don't render the page
-  if (!isAdmin && !isSuperAdmin && !isOrgAdmin && !isAdminLoading && session?.user?.email !== 'pdarleyjr@gmail.com') {
+  // If not an admin or not approved, don't render the page
+  if (
+    (!isAdmin && !isSuperAdmin && !isOrgAdmin && !isAdminLoading && session?.user?.email !== 'pdarleyjr@gmail.com') ||
+    (isOrgAdmin && !isOrgApproved && !isAdminLoading)
+  ) {
     return null;
   }
   
@@ -522,7 +534,7 @@ const AnalyticsDashboard = () => {
                   {(isAdmin || isSuperAdmin || isOrgAdmin) && (
                     <CardFooter>
                       <IOSButton
-                        onClick={() => navigate("/admin/settings/appointment-types")}
+                        onClick={() => navigate("/settings/appointment-types")}
                         variant="outline"
                         className="ml-auto"
                       >
@@ -624,7 +636,7 @@ const AnalyticsDashboard = () => {
                   {(isAdmin || isSuperAdmin || isOrgAdmin) && (
                     <CardFooter>
                       <IOSButton
-                        onClick={() => navigate("/admin/settings/locations")}
+                        onClick={() => navigate("/settings/locations")}
                         variant="outline"
                         className="ml-auto"
                       >
@@ -720,7 +732,7 @@ const AnalyticsDashboard = () => {
                               </td>
                               <td className="text-right py-3 px-4">
                                 <IOSButton
-                                  onClick={() => navigate(`/admin/users/${user.userId}`)}
+                                  onClick={() => navigate(`/users/${user.userId}`)}
                                   variant="ghost"
                                   size="sm"
                                 >

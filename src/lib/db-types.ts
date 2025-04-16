@@ -20,6 +20,7 @@ export type Schema = {
     email: string;
     name?: string;
     organizationId?: number | null;
+    organizationApproved?: boolean;
     createdAt?: string;
     updatedAt?: string;
   };

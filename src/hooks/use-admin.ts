@@ -7,6 +7,7 @@ export function useAdminStatus() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isOrgAdmin, setIsOrgAdmin] = useState(false);
   const [organizationId, setOrganizationId] = useState<number | null>(null);
+  const [isOrgApproved, setIsOrgApproved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { data: session } = fine.auth.useSession();
 
@@ -25,6 +26,7 @@ export function useAdminStatus() {
           setIsSuperAdmin(true);
           setIsOrgAdmin(false);
           setOrganizationId(1); // Set a default organization ID
+          setIsOrgApproved(true);
           setIsLoading(false);
           return;
         }
@@ -34,6 +36,24 @@ export function useAdminStatus() {
         setIsSuperAdmin(status.isSuperAdmin);
         setIsOrgAdmin(status.isOrgAdmin);
         setOrganizationId(status.organizationId);
+        
+        // Check if user is approved for their organization
+        if (status.organizationId) {
+          try {
+            const users = await fine.table("users")
+              .select("organizationApproved")
+              .eq("id", session.user.id);
+            
+            if (users && users.length > 0) {
+              setIsOrgApproved(users[0].organizationApproved === true);
+            } else {
+              setIsOrgApproved(false);
+            }
+          } catch (error) {
+            console.error("Error checking organization approval:", error);
+            setIsOrgApproved(false);
+          }
+        }
       } catch (error) {
         console.error("Error checking admin status:", error);
         
@@ -44,6 +64,7 @@ export function useAdminStatus() {
           setIsSuperAdmin(true);
           setIsOrgAdmin(false);
           setOrganizationId(1); // Set a default organization ID
+          setIsOrgApproved(true);
         }
       } finally {
         setIsLoading(false);
@@ -53,5 +74,5 @@ export function useAdminStatus() {
     checkAdminStatus();
   }, [session?.user?.id, session?.user?.email]);
 
-  return { isAdmin, isSuperAdmin, isOrgAdmin, organizationId, isLoading };
+  return { isAdmin, isSuperAdmin, isOrgAdmin, organizationId, isOrgApproved, isLoading };
 }
