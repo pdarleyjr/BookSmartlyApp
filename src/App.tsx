@@ -26,6 +26,10 @@ import AdminLocations from "@/pages/admin/settings/locations";
 import AdminAnalytics from "@/pages/admin/analytics/index";
 import AdminUserAnalytics from "@/pages/admin/analytics/users/[id]";
 import AdminLocationAnalytics from "@/pages/admin/analytics/locations/[id]";
+import ClientsPage from "@/pages/clients/index";
+import ClientDetails from "@/pages/clients/[id]";
+import CreateClient from "@/pages/clients/new";
+import ImportClients from "@/pages/clients/import";
 
 function App() {
   return (
@@ -46,6 +50,12 @@ function App() {
               <Route path="/settings/appointment-types" element={<AdminAppointmentTypes />} />
               <Route path="/settings/locations" element={<AdminLocations />} />
               <Route path="/settings" element={<AdminSettings />} />
+              
+              {/* Clients routes */}
+              <Route path="/clients" element={<ClientsPage />} />
+              <Route path="/clients/:id" element={<ClientDetails />} />
+              <Route path="/clients/new" element={<CreateClient />} />
+              <Route path="/clients/import" element={<ImportClients />} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<AdminDashboard />} />

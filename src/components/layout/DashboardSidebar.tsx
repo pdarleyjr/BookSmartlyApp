@@ -8,7 +8,8 @@ import {
   Users, 
   ChevronLeft,
   ChevronRight,
-  HelpCircle
+  HelpCircle,
+  UserCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fine } from "@/lib/fine";
@@ -78,6 +79,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         <nav className="space-y-1">
           <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
           <SidebarItem to="/calendar" icon={Calendar} label="Calendar" collapsed={collapsed} />
+          <SidebarItem to="/clients" icon={UserCircle} label="Clients" collapsed={collapsed} />
           
           {/* Only show Analytics link for admin users */}
           {(isAdmin || isSuperAdmin || isOrgAdmin) && (

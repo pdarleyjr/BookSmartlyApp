@@ -55,4 +55,16 @@ export type Schema = {
     createdAt?: string;
     updatedAt?: string;
   };
+  clients: {
+    id?: number;
+    organizationId?: number | null;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    dateOfBirth?: string | null;
+    notes?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+  };
 }
