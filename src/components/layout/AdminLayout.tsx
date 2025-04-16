@@ -123,7 +123,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     icon={Settings}
                     label="Settings"
                     href="/admin/settings"
-                    onClick={() => navigate("/admin")}
+                    onClick={() => navigate("/admin/settings")}
                   />
                   <SidebarItem
                     icon={LogOut}
