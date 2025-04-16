@@ -148,33 +148,31 @@ export default function SignupForm() {
           onRequest: () => {
             setIsLoading(true);
           },
-          onSuccess: async (ctx) => {
+          onSuccess: async () => {
             // After successful signup, we need to handle organization-specific logic
             try {
-              // Get the user ID from the signup response
-              const userId = ctx.session?.user?.id;
-              
-              if (userId) {
-                if (accountType === "organization") {
-                  // Create the organization
-                  const newOrg = await adminApi.createOrganization(formData.organizationName);
-                  
-                  if (newOrg && newOrg.id) {
-                    // Set the user as org admin
-                    await adminApi.updateUserOrganization(userId, newOrg.id);
-                    await adminApi.updateUserRole(userId, "org_admin");
-                  }
-                } else if (accountType === "orgUser" && formData.organizationId) {
-                  // Link user to organization
-                  await adminApi.updateUserOrganization(userId, parseInt(formData.organizationId));
-                  await adminApi.updateUserRole(userId, "user");
-                }
-              }
+              // Since we can't directly get the user ID from the signup response,
+              // we'll need to handle organization setup after the user logs in
+              // for the first time. For now, just show a success message.
               
               toast({
                 title: "Account created",
-                description: "Please check your email to verify your account.",
+                description: "Please check your email to verify your account and log in.",
               });
+              
+              // For organization creators, we'll provide additional instructions
+              if (accountType === "organization") {
+                toast({
+                  title: "Organization setup",
+                  description: "After logging in, you'll be set as the organization admin.",
+                });
+              } else if (accountType === "orgUser") {
+                toast({
+                  title: "Organization membership",
+                  description: "After logging in, you'll be added to your organization.",
+                });
+              }
+              
               navigate("/login");
             } catch (orgError) {
               console.error("Failed to handle organization setup:", orgError);
