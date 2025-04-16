@@ -3,6 +3,7 @@ import { format, addMinutes, parseISO, set } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Schema } from "@/lib/db-types";
 
 type TimeSlotPickerProps = {
   date: Date;
@@ -11,6 +12,7 @@ type TimeSlotPickerProps = {
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
   onDurationChange: (minutes: number) => void;
+  appointmentType?: Schema["appointment_types"] | null;
 };
 
 export function TimeSlotPicker({
@@ -19,7 +21,8 @@ export function TimeSlotPicker({
   endTime,
   onStartTimeChange,
   onEndTimeChange,
-  onDurationChange
+  onDurationChange,
+  appointmentType
 }: TimeSlotPickerProps) {
   const [duration, setDuration] = useState("30");
   
@@ -42,9 +45,27 @@ export function TimeSlotPicker({
   
   const timeSlots = generateTimeSlots();
   
+  // Update duration when appointment type changes
+  useEffect(() => {
+    if (appointmentType) {
+      setDuration(appointmentType.durationMinutes.toString());
+      
+      // Update end time based on the appointment type duration
+      try {
+        const startDateTime = parseISO(startTime);
+        const endDateTime = new Date(startDateTime);
+        endDateTime.setMinutes(startDateTime.getMinutes() + appointmentType.durationMinutes);
+        
+        onEndTimeChange(format(endDateTime, "yyyy-MM-dd'T'HH:mm"));
+      } catch (e) {
+        // Handle parsing errors
+      }
+    }
+  }, [appointmentType, startTime]);
+  
   // Update end time when start time or duration changes
   useEffect(() => {
-    if (startTime) {
+    if (startTime && !appointmentType) {
       try {
         // Create a date object with the selected date and start time
         const startDateTime = parseISO(startTime);
@@ -57,7 +78,7 @@ export function TimeSlotPicker({
         // Handle parsing errors
       }
     }
-  }, [startTime, duration, onEndTimeChange]);
+  }, [startTime, duration, onEndTimeChange, appointmentType]);
   
   const handleStartTimeChange = (timeValue: string) => {
     // Combine the selected date with the time value
@@ -98,6 +119,7 @@ export function TimeSlotPicker({
           <Select 
             onValueChange={handleDurationChange}
             value={duration}
+            disabled={!!appointmentType}
           >
             <SelectTrigger id="duration" className="ios-touch-target">
               <SelectValue placeholder="Select duration" />
@@ -111,6 +133,11 @@ export function TimeSlotPicker({
               <SelectItem value="120" className="ios-touch-target">2 hours</SelectItem>
             </SelectContent>
           </Select>
+          {appointmentType && (
+            <p className="text-xs text-muted-foreground">
+              Duration set by appointment type
+            </p>
+          )}
         </div>
       </div>
       

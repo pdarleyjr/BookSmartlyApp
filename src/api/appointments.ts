@@ -41,6 +41,37 @@ export const appointmentsApi = {
   },
 
   /**
+   * Get all appointments for an organization
+   * @param organizationId - The organization ID
+   * @returns Promise with appointments array
+   */
+  getOrganizationAppointments: async (organizationId: number): Promise<Schema["appointments"][]> => {
+    try {
+      // Get users in the organization
+      const users = await fine.table("users")
+        .select("id")
+        .eq("organizationId", organizationId);
+      
+      if (!users || users.length === 0) {
+        return [];
+      }
+      
+      const userIds = users.map(user => user.id);
+      
+      // Get appointments for all users in the organization
+      const data = await fine.table("appointments")
+        .select()
+        .in("userId", userIds)
+        .order("startTime", { ascending: true });
+      
+      return data || [];
+    } catch (error) {
+      console.error(`Error fetching appointments for organization ${organizationId}:`, error);
+      return [];
+    }
+  },
+
+  /**
    * Get a single appointment by ID
    * @param id - The appointment ID
    * @param userId - The user ID (for authorization)
@@ -82,8 +113,34 @@ export const appointmentsApi = {
         throw new Error("User ID is required");
       }
       
+      // Calculate price based on appointment type if provided
+      let finalAppointment = { ...appointment };
+      
+      if (appointment.appointmentTypeId) {
+        try {
+          const appointmentTypes = await fine.table("appointment_types")
+            .select()
+            .eq("id", appointment.appointmentTypeId);
+          
+          if (appointmentTypes && appointmentTypes.length > 0) {
+            const appointmentType = appointmentTypes[0];
+            
+            // Calculate price based on duration
+            const startTime = new Date(appointment.startTime);
+            const endTime = new Date(appointment.endTime);
+            const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+            
+            // Calculate price proportionally to the base duration
+            const priceMultiplier = durationMinutes / appointmentType.durationMinutes;
+            finalAppointment.price = appointmentType.price * priceMultiplier;
+          }
+        } catch (error) {
+          console.error("Error calculating appointment price:", error);
+        }
+      }
+      
       const newAppointment = {
-        ...appointment,
+        ...finalAppointment,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -135,8 +192,37 @@ export const appointmentsApi = {
           throw new Error("Appointment not found or unauthorized");
         }
         
+        // Calculate price based on appointment type if provided
+        let finalAppointment = { ...appointment };
+        
+        if (appointment.appointmentTypeId) {
+          try {
+            const appointmentTypes = await fine.table("appointment_types")
+              .select()
+              .eq("id", appointment.appointmentTypeId);
+            
+            if (appointmentTypes && appointmentTypes.length > 0) {
+              const appointmentType = appointmentTypes[0];
+              
+              // Calculate price based on duration
+              const startTime = new Date(appointment.startTime || "");
+              const endTime = new Date(appointment.endTime || "");
+              
+              if (startTime && endTime) {
+                const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+                
+                // Calculate price proportionally to the base duration
+                const priceMultiplier = durationMinutes / appointmentType.durationMinutes;
+                finalAppointment.price = appointmentType.price * priceMultiplier;
+              }
+            }
+          } catch (error) {
+            console.error("Error calculating appointment price:", error);
+          }
+        }
+        
         const updatedAppointment = {
-          ...appointment,
+          ...finalAppointment,
           updatedAt: new Date().toISOString(),
         };
         
@@ -242,6 +328,25 @@ export const appointmentsApi = {
     } catch (error) {
       console.error("Error fetching appointments by date range:", error);
       throw error;
+    }
+  },
+
+  /**
+   * Get appointments for a specific staff member
+   * @param assignedToUserId - The assigned staff member's user ID
+   * @returns Promise with appointments array
+   */
+  getAppointmentsByStaffMember: async (assignedToUserId: string): Promise<Schema["appointments"][]> => {
+    try {
+      const data = await fine.table("appointments")
+        .select()
+        .eq("assignedToUserId", assignedToUserId)
+        .order("startTime", { ascending: true });
+      
+      return data || [];
+    } catch (error) {
+      console.error(`Error fetching appointments for staff member ${assignedToUserId}:`, error);
+      return [];
     }
   }
 };

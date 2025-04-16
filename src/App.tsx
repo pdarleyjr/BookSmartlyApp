@@ -19,6 +19,9 @@ import AdminAppointmentDetails from "@/pages/admin/appointments/[id]";
 import AdminUserManagement from "@/pages/admin/users/[id]";
 import AdminOrganizationManagement from "@/pages/admin/organizations/[id]";
 import CreateOrganization from "@/pages/admin/organizations/new";
+import AdminSettings from "@/pages/admin/settings/index";
+import AdminAppointmentTypes from "@/pages/admin/settings/appointment-types";
+import AdminLocations from "@/pages/admin/settings/locations";
 
 function App() {
   return (
@@ -39,6 +42,9 @@ function App() {
               <Route path="/admin/users/:id" element={<AdminUserManagement />} />
               <Route path="/admin/organizations/:id" element={<AdminOrganizationManagement />} />
               <Route path="/admin/organizations/new" element={<CreateOrganization />} />
+              <Route path="/admin/settings" element={<AdminSettings />} />
+              <Route path="/admin/settings/appointment-types" element={<AdminAppointmentTypes />} />
+              <Route path="/admin/settings/locations" element={<AdminLocations />} />
             </Routes>
           </Router>
           <Sonner />
