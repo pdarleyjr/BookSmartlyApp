@@ -149,37 +149,41 @@ export default function SignupForm() {
             setIsLoading(true);
           },
           onSuccess: async (data) => {
-            // Handle organization-specific logic
-            if (accountType === "organization") {
-              try {
-                // Create the organization
-                const newOrg = await adminApi.createOrganization(formData.organizationName);
-                
-                if (newOrg && newOrg.id && data.user?.id) {
-                  // Set the user as org admin
-                  await adminApi.updateUserOrganization(data.user.id, newOrg.id);
-                  await adminApi.updateUserRole(data.user.id, "org_admin");
-                }
-              } catch (orgError) {
-                console.error("Failed to create organization:", orgError);
-              }
-            } else if (accountType === "orgUser" && formData.organizationId) {
-              try {
-                if (data.user?.id) {
+            // After successful signup, we need to handle organization-specific logic
+            try {
+              // Get the user ID from the signup response
+              const userId = data?.user?.id;
+              
+              if (userId) {
+                if (accountType === "organization") {
+                  // Create the organization
+                  const newOrg = await adminApi.createOrganization(formData.organizationName);
+                  
+                  if (newOrg && newOrg.id) {
+                    // Set the user as org admin
+                    await adminApi.updateUserOrganization(userId, newOrg.id);
+                    await adminApi.updateUserRole(userId, "org_admin");
+                  }
+                } else if (accountType === "orgUser" && formData.organizationId) {
                   // Link user to organization
-                  await adminApi.updateUserOrganization(data.user.id, parseInt(formData.organizationId));
-                  await adminApi.updateUserRole(data.user.id, "user");
+                  await adminApi.updateUserOrganization(userId, parseInt(formData.organizationId));
+                  await adminApi.updateUserRole(userId, "user");
                 }
-              } catch (orgError) {
-                console.error("Failed to link user to organization:", orgError);
               }
+              
+              toast({
+                title: "Account created",
+                description: "Please check your email to verify your account.",
+              });
+              navigate("/login");
+            } catch (orgError) {
+              console.error("Failed to handle organization setup:", orgError);
+              toast({
+                title: "Account created",
+                description: "Your account was created, but there was an issue with organization setup.",
+              });
+              navigate("/login");
             }
-            
-            toast({
-              title: "Account created",
-              description: "Please check your email to verify your account.",
-            });
-            navigate("/login");
           },
           onError: (ctx) => {
             toast({
