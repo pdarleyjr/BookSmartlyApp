@@ -148,11 +148,11 @@ export default function SignupForm() {
           onRequest: () => {
             setIsLoading(true);
           },
-          onSuccess: async (data) => {
+          onSuccess: async (ctx) => {
             // After successful signup, we need to handle organization-specific logic
             try {
               // Get the user ID from the signup response
-              const userId = data?.user?.id;
+              const userId = ctx.session?.user?.id;
               
               if (userId) {
                 if (accountType === "organization") {
