@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Camera } from "lucide-react";
+import { Menu, X, Calendar } from "lucide-react";
 import { IOSButton } from "@/components/ui/ios-button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { fine } from "@/lib/fine";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { data: session } = fine.auth.useSession();
 
   const navItems = [
-    { label: "Home", href: "/" },
-    { label: "Portfolio", href: "#portfolio" },
-    { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" }
+    { label: "Dashboard", href: "/" },
+    { label: "Calendar", href: "/" },
   ];
 
   return (
@@ -21,8 +21,8 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <Camera className="h-6 w-6 text-pastel-sky" />
-            <h1 className="text-xl font-poppins font-bold">PhotoFolio</h1>
+            <Calendar className="h-6 w-6 text-coral" />
+            <h1 className="text-xl font-poppins font-bold">BookSmartly</h1>
           </Link>
         </div>
         
@@ -40,12 +40,29 @@ export function Header() {
                   <Link 
                     key={item.label}
                     to={item.href} 
-                    className="text-lg font-poppins font-medium transition-colors hover:text-pastel-sky"
+                    className="text-lg font-poppins font-medium transition-colors hover:text-coral"
                     onClick={() => setIsOpen(false)}
                   >
                     {item.label}
                   </Link>
                 ))}
+                {session?.user ? (
+                  <Link 
+                    to="/logout" 
+                    className="text-lg font-poppins font-medium transition-colors hover:text-coral"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Logout
+                  </Link>
+                ) : (
+                  <Link 
+                    to="/login" 
+                    className="text-lg font-poppins font-medium transition-colors hover:text-coral"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Login
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -55,14 +72,26 @@ export function Header() {
               <Link 
                 key={item.label}
                 to={item.href} 
-                className="text-sm font-poppins font-medium transition-colors hover:text-pastel-sky"
+                className="text-sm font-poppins font-medium transition-colors hover:text-coral"
               >
                 {item.label}
               </Link>
             ))}
-            <IOSButton className="bg-pastel-sky text-black hover:bg-pastel-sky/90">
-              Book a Session
-            </IOSButton>
+            {session?.user ? (
+              <IOSButton 
+                onClick={() => window.location.href = "/logout"} 
+                variant="outline"
+              >
+                Logout
+              </IOSButton>
+            ) : (
+              <IOSButton 
+                onClick={() => window.location.href = "/login"}
+                className="bg-coral text-white hover:bg-coral/90"
+              >
+                Login
+              </IOSButton>
+            )}
           </nav>
         )}
       </div>
