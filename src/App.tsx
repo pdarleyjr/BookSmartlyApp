@@ -14,11 +14,6 @@ import Logout from "@/pages/logout";
 import CreateAppointment from "@/pages/create-appointment";
 import EditAppointment from "@/pages/edit-appointment";
 import AppointmentDetails from "@/pages/appointment-details";
-import AdminDashboard from "@/pages/admin/index";
-import AdminAppointmentDetails from "@/pages/admin/appointments/[id]";
-import AdminUserManagement from "@/pages/admin/users/[id]";
-import AdminOrganizationManagement from "@/pages/admin/organizations/[id]";
-import CreateOrganization from "@/pages/admin/organizations/new";
 
 function App() {
   return (
@@ -34,11 +29,6 @@ function App() {
               <Route path="/create-appointment" element={<CreateAppointment />} />
               <Route path="/edit-appointment/:id" element={<EditAppointment />} />
               <Route path="/appointment/:id" element={<AppointmentDetails />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/appointments/:id" element={<AdminAppointmentDetails />} />
-              <Route path="/admin/users/:id" element={<AdminUserManagement />} />
-              <Route path="/admin/organizations/:id" element={<AdminOrganizationManagement />} />
-              <Route path="/admin/organizations/new" element={<CreateOrganization />} />
             </Routes>
           </Router>
           <Sonner />
