@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { fine } from "@/lib/fine";
 import { IOSButton } from "@/components/ui/ios-button";
@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { adminApi } from "@/api/admin";
+import { organizationsApi } from "@/api/organizations";
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +77,37 @@ export default function LoginForm() {
           onRequest: () => {
             setIsLoading(true);
           },
-          onSuccess: () => {
+          onSuccess: async (ctx) => {
+            // Check if there's pending organization data from signup
+            const pendingOrgId = localStorage.getItem("pendingOrgId");
+            const pendingOrgCode = localStorage.getItem("pendingOrgCode");
+            
+            if (pendingOrgId && pendingOrgCode && ctx.data?.user?.id) {
+              try {
+                // Verify the organization code
+                const isValid = await organizationsApi.verifyOrganizationCode(
+                  parseInt(pendingOrgId),
+                  pendingOrgCode
+                );
+                
+                if (isValid) {
+                  // Add user to organization
+                  await adminApi.updateUserOrganization(ctx.data.user.id, parseInt(pendingOrgId));
+                  
+                  toast({
+                    title: "Organization joined",
+                    description: "You have been added to the organization. An admin will need to approve your request.",
+                  });
+                }
+                
+                // Clear the pending organization data
+                localStorage.removeItem("pendingOrgId");
+                localStorage.removeItem("pendingOrgCode");
+              } catch (error) {
+                console.error("Failed to process organization membership:", error);
+              }
+            }
+            
             toast({
               title: "Success",
               description: "You have been signed in successfully.",
