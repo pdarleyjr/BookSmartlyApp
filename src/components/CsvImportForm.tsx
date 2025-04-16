@@ -85,7 +85,7 @@ export function CsvImportForm() {
       <CardHeader>
         <CardTitle className="text-xl font-poppins">Import Clients from CSV</CardTitle>
         <CardDescription className="font-montserrat">
-          Upload a CSV file with client data. The file should have headers matching the client fields.
+          Upload a CSV file with client data. Only the name field is required - any other available data will be imported automatically.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -101,8 +101,7 @@ export function CsvImportForm() {
               disabled={isLoading}
             />
             <p className="text-sm text-muted-foreground font-montserrat">
-              The CSV file should include columns for name, email, phone, address, dateOfBirth, and notes.
-              Only the name column is required.
+              The CSV file should include a column for client names. Additional columns like email, phone, address, dateOfBirth, and notes will be imported if present.
             </p>
           </div>
           

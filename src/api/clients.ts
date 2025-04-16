@@ -149,21 +149,22 @@ export const clientsApi = {
               const row = rows[i] as any;
               
               try {
-                // Validate required fields
+                // Only require name field, everything else is optional
                 if (!row.name) {
                   failed.push({ row: i + 1, data: row, error: "Name is required" });
                   continue;
                 }
                 
-                // Create client object
+                // Create client object with whatever fields are available
                 const clientData: CreateClientDto = {
                   name: row.name,
+                  organizationId,
+                  // Map any available fields from the CSV
                   email: row.email || null,
-                  phone: row.phone || null,
-                  address: row.address || null,
-                  dateOfBirth: row.dateOfBirth || row.dob || null,
-                  notes: row.notes || null,
-                  organizationId
+                  phone: row.phone || row.phoneNumber || row.contact || null,
+                  address: row.address || row.location || null,
+                  dateOfBirth: row.dateOfBirth || row.dob || row.birthdate || row.birthday || null,
+                  notes: row.notes || row.comments || row.description || null
                 };
                 
                 // Insert client
