@@ -104,8 +104,8 @@ export function Layout({ children }: LayoutProps) {
         <main
           className={`
             flex-1 transition-all duration-300 p-4
-            ${!isMobile && !sidebarCollapsed ? 'md:ml-64' : ''}
-            ${!isMobile && sidebarCollapsed ? 'md:ml-16' : ''}
+            ${!isMobile && session?.user && !sidebarCollapsed ? 'md:ml-64' : ''}
+            ${!isMobile && session?.user && sidebarCollapsed ? 'md:ml-16' : ''}
           `}
         >
           <div className="glass-card p-6 rounded-discord-lg shadow-discord-lg">

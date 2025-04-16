@@ -52,7 +52,7 @@ type DashboardSidebarProps = {
 };
 
 export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps) {
-  const { isAdmin } = useAdminStatus();
+  const { isAdmin, isSuperAdmin, isOrgAdmin } = useAdminStatus();
   const { data: session } = fine.auth.useSession();
   
   if (!session?.user) return null;
@@ -78,10 +78,16 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         <nav className="space-y-1">
           <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
           <SidebarItem to="/calendar" icon={Calendar} label="Calendar" collapsed={collapsed} />
-          <SidebarItem to="/analytics" icon={BarChart2} label="Analytics" collapsed={collapsed} />
+          
+          {/* Only show Analytics link for admin users */}
+          {(isAdmin || isSuperAdmin || isOrgAdmin) && (
+            <SidebarItem to="/analytics" icon={BarChart2} label="Analytics" collapsed={collapsed} />
+          )}
+          
           <SidebarItem to="/billing" icon={CreditCard} label="Billing" collapsed={collapsed} />
           
-          {isAdmin && (
+          {/* Admin link for all admin types */}
+          {(isAdmin || isSuperAdmin || isOrgAdmin) && (
             <SidebarItem to="/admin" icon={Users} label="Admin" collapsed={collapsed} />
           )}
           

@@ -175,9 +175,12 @@ const UserManagementPage = () => {
                         </>
                       )}
                       
-                      {/* Org admin can only assign user role */}
+                      {/* Org admin can assign user or org_admin role */}
                       {isOrgAdmin && !isSuperAdmin && (
-                        <SelectItem value="user">User</SelectItem>
+                        <>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="org_admin">Organization Admin</SelectItem>
+                        </>
                       )}
                       
                       {/* Show super admin as disabled option if user is already super admin */}
