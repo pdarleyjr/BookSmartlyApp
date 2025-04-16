@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { clientsApi } from "@/api/clients";
 import { useAdminStatus } from "@/hooks/use-admin";
-import { Upload, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Upload, AlertCircle, CheckCircle2, XCircle, FileText } from "lucide-react";
 import type { Schema } from "@/lib/db-types";
 
 export function CsvImportForm() {
@@ -101,8 +101,38 @@ export function CsvImportForm() {
               disabled={isLoading}
             />
             <p className="text-sm text-muted-foreground font-montserrat">
-              The CSV file should include a column for client names. Additional columns like email, phone, address, dateOfBirth, and notes will be imported if present.
+              The CSV file should include a column for client names. Additional columns will be imported if present.
             </p>
+          </div>
+          
+          <div className="bg-muted/30 p-4 rounded-lg">
+            <h3 className="text-sm font-medium mb-2 font-poppins flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              Supported Fields
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-sm text-muted-foreground font-montserrat">
+              <div>• name (required)</div>
+              <div>• email</div>
+              <div>• phone/phoneNumber</div>
+              <div>• cellPhone/mobilePhone</div>
+              <div>• workPhone/businessPhone</div>
+              <div>• fax/faxNumber</div>
+              <div>• address/location</div>
+              <div>• city</div>
+              <div>• state/province</div>
+              <div>• zipCode/postalCode</div>
+              <div>• country</div>
+              <div>• dateOfBirth/dob</div>
+              <div>• gender/sex</div>
+              <div>• occupation/job</div>
+              <div>• company/organization</div>
+              <div>• referredBy/referral</div>
+              <div>• emergencyContact</div>
+              <div>• emergencyPhone</div>
+              <div>• insuranceProvider</div>
+              <div>• insuranceId/policyNumber</div>
+              <div>• notes/comments</div>
+            </div>
           </div>
           
           {importResults && (

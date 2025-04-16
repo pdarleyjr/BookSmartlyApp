@@ -162,8 +162,23 @@ export const clientsApi = {
                   // Map any available fields from the CSV
                   email: row.email || null,
                   phone: row.phone || row.phoneNumber || row.contact || null,
-                  address: row.address || row.location || null,
+                  cellPhone: row.cellPhone || row.mobilePhone || row.mobile || row.cell || null,
+                  workPhone: row.workPhone || row.businessPhone || row.officePhone || null,
+                  fax: row.fax || row.faxNumber || null,
+                  address: row.address || row.location || row.streetAddress || null,
+                  city: row.city || null,
+                  state: row.state || row.province || row.region || null,
+                  zipCode: row.zipCode || row.postalCode || row.zip || null,
+                  country: row.country || null,
                   dateOfBirth: row.dateOfBirth || row.dob || row.birthdate || row.birthday || null,
+                  gender: row.gender || row.sex || null,
+                  occupation: row.occupation || row.job || row.profession || null,
+                  company: row.company || row.organization || row.employer || null,
+                  referredBy: row.referredBy || row.referral || row.referralSource || null,
+                  emergencyContact: row.emergencyContact || row.emergency || null,
+                  emergencyPhone: row.emergencyPhone || row.emergencyContactPhone || null,
+                  insuranceProvider: row.insuranceProvider || row.insurance || row.provider || null,
+                  insuranceId: row.insuranceId || row.policyNumber || row.insuranceNumber || null,
                   notes: row.notes || row.comments || row.description || null
                 };
                 

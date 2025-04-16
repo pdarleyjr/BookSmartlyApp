@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Trash2, Mail, Phone, Calendar } from "lucide-react";
+import { Edit, Trash2, Mail, Phone, Calendar, Briefcase, MapPin } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -85,6 +85,13 @@ export function ClientCard({ client, onDelete }: ClientCardProps) {
           </div>
         )}
         
+        {client.cellPhone && (
+          <div className="flex items-center gap-2 font-montserrat">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            <span>Cell: {client.cellPhone}</span>
+          </div>
+        )}
+        
         {client.dateOfBirth && (
           <div className="flex items-center gap-2 font-montserrat">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -92,8 +99,27 @@ export function ClientCard({ client, onDelete }: ClientCardProps) {
           </div>
         )}
         
+        {client.company && (
+          <div className="flex items-center gap-2 font-montserrat">
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+            <span>{client.company}</span>
+          </div>
+        )}
+        
         {client.address && (
-          <p className="text-sm text-muted-foreground font-montserrat">{client.address}</p>
+          <div className="flex items-start gap-2 font-montserrat">
+            <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+            <div>
+              <div>{client.address}</div>
+              {(client.city || client.state || client.zipCode) && (
+                <div>
+                  {client.city}{client.city && (client.state || client.zipCode) ? ", " : ""}
+                  {client.state}{client.state && client.zipCode ? " " : ""}
+                  {client.zipCode}
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </CardContent>
       <CardFooter className="flex justify-end gap-2 pb-4">
