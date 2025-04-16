@@ -1,6 +1,6 @@
 # BookSmartly - Mobile Scheduler App
 
-A mobile-friendly appointment scheduling application built with React, TypeScript, and PostgreSQL.
+A mobile-friendly appointment scheduling application built with React, TypeScript, and SQLite.
 
 ## Features
 
@@ -10,34 +10,28 @@ A mobile-friendly appointment scheduling application built with React, TypeScrip
 - Time slot selection with duration options
 - Appointment details (title, description, location)
 - Mobile-responsive design
+- Organization management with locations and appointment types
+- Admin dashboard for managing users and settings
 
 ## Installation
 
 ```bash
 # Install dependencies
 npm install
-```
 
-## Environment Variables
-
-The following environment variables are required:
-
-```
-DATABASE_URL=postgresql://username:password@localhost:5432/booksmartly
-API_KEY=your_api_key
-PORT=3000
-```
-
-You can set these in your project settings or in a `.env` file.
-
-## Development
-
-```bash
-# Run the development server
+# Start the development server
 npm run dev
 ```
 
-The application will be available at http://localhost:3000.
+## Project Structure
+
+- `/src/components` - Reusable UI components
+- `/src/pages` - Application pages
+- `/src/api` - API service functions
+- `/src/redux` - Redux store and slices
+- `/src/hooks` - Custom React hooks
+- `/src/lib` - Utility functions and types
+- `/fine/migrations` - Database migrations
 
 ## Technologies Used
 
@@ -45,27 +39,34 @@ The application will be available at http://localhost:3000.
 - TypeScript
 - Vite
 - Redux Toolkit
-- PostgreSQL
-- Fine SDK for authentication
+- SQLite (via Fine SDK)
 - Tailwind CSS
 - shadcn/ui components
 
-## Database Schema
+## Admin Features
 
-The application uses a PostgreSQL database with the following schema:
+### Organization Settings
 
-```sql
-CREATE TABLE appointments (
-  id SERIAL PRIMARY KEY,
-  userId TEXT NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT,
-  location TEXT,
-  startTime TIMESTAMP NOT NULL,
-  endTime TIMESTAMP NOT NULL,
-  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+- **Appointment Types**: Configure service types with duration and pricing
+- **Locations**: Manage service locations
+- **User Management**: Add and manage organization users
 
-CREATE INDEX idx_appointments_userId ON appointments(userId);
-CREATE INDEX idx_appointments_startTime ON appointments(startTime);
+### User Roles
+
+- **Super Admin**: Can manage all organizations and users
+- **Organization Admin**: Can manage their organization's settings and users
+- **User**: Can create and manage appointments
+
+## Development
+
+The application is set up with:
+
+- ESLint and Prettier for code formatting
+- TypeScript for type safety
+- Tailwind CSS for styling
+- Redux for state management
+- React Router for navigation
+
+## License
+
+This project is licensed under the MIT License.
