@@ -1,0 +1,2 @@
+-- This is a placeholder migration file to trigger the installation of @reduxjs/toolkit
+-- The actual installation will happen automatically based on imports

@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    
+    --primary: 14 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 42 100% 60%;
+    --secondary-foreground: 0 0% 0%;
+    
+    --accent: 230 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    
+    --primary: 14 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 42 100% 60%;
+    --secondary-foreground: 0 0% 0%;
+    
+    --accent: 230 100% 60%;
+    --accent-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Montserrat', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+main {
+  @apply min-h-screen w-full;
+}
+
+/* iOS-style components */
+.ios-button {
+  @apply rounded-full py-3 px-6 font-medium transition-all active:scale-95;
+  min-height: 44px;
+}
+
+.ios-card {
+  @apply rounded-xl bg-white shadow-sm;
+}
+
+.ios-input {
+  @apply rounded-lg border border-border bg-background px-4 py-3;
+  min-height: 44px;
+}
+
+.ios-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Custom scrollbar for iOS feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
