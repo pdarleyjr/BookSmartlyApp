@@ -1,15 +1,17 @@
 import { NavLink } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  BarChart2, 
-  CreditCard, 
-  Settings, 
-  Users, 
+import {
+  LayoutDashboard,
+  Calendar,
+  BarChart2,
+  CreditCard,
+  Settings,
+  Users,
   ChevronLeft,
   ChevronRight,
   HelpCircle,
-  UserCircle
+  UserCircle,
+  Bot,
+  LineChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fine } from "@/lib/fine";
@@ -83,7 +85,10 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           
           {/* Only show Analytics link for admin users */}
           {(isAdmin || isSuperAdmin || isOrgAdmin) && (
-            <SidebarItem to="/analytics" icon={BarChart2} label="Analytics" collapsed={collapsed} />
+            <>
+              <SidebarItem to="/analytics" icon={BarChart2} label="Analytics" collapsed={collapsed} />
+              <SidebarItem to="/ai-analytics" icon={LineChart} label="AI Analytics" collapsed={collapsed} />
+            </>
           )}
           
           <SidebarItem to="/billing" icon={CreditCard} label="Billing" collapsed={collapsed} />
@@ -94,6 +99,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           )}
           
           <div className="pt-4 mt-4 border-t border-discord-backgroundModifierAccent">
+            <SidebarItem to="/chat" icon={Bot} label="AI Assistant" collapsed={collapsed} />
             <SidebarItem to="/settings" icon={Settings} label="Settings" collapsed={collapsed} />
             <SidebarItem to="/help" icon={HelpCircle} label="Help & Support" collapsed={collapsed} />
           </div>

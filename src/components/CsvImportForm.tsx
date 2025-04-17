@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { clientsApi } from "@/api/clients";
 import { useAdminStatus } from "@/hooks/use-admin";
-import { Upload, AlertCircle, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { Upload, AlertCircle, CheckCircle2, FileText } from "lucide-react";
 import type { Schema } from "@/lib/db-types";
 
 export function CsvImportForm() {
@@ -16,7 +16,7 @@ export function CsvImportForm() {
   const [file, setFile] = useState<File | null>(null);
   const [importResults, setImportResults] = useState<{
     successful: Schema["clients"][];
-    failed: { row: number; data: any; error: string }[];
+    failed: { row: number; data: Record<string, unknown>; error: string }[];
   } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -69,7 +69,7 @@ export function CsvImportForm() {
           navigate("/clients");
         }, 3000);
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to import clients. Please try again.",
@@ -86,6 +86,7 @@ export function CsvImportForm() {
         <CardTitle className="text-xl font-poppins">Import Clients from CSV</CardTitle>
         <CardDescription className="font-montserrat">
           Upload a CSV file with client data. Only the name field is required - any other available data will be imported automatically.
+          <span className="block mt-1 text-green-600 font-medium">Square CSV exports are now supported!</span>
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -105,33 +106,52 @@ export function CsvImportForm() {
             </p>
           </div>
           
-          <div className="bg-muted/30 p-4 rounded-lg">
-            <h3 className="text-sm font-medium mb-2 font-poppins flex items-center">
-              <FileText className="h-4 w-4 mr-2" />
-              Supported Fields
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-sm text-muted-foreground font-montserrat">
-              <div>• name (required)</div>
-              <div>• email</div>
-              <div>• phone/phoneNumber</div>
-              <div>• cellPhone/mobilePhone</div>
-              <div>• workPhone/businessPhone</div>
-              <div>• fax/faxNumber</div>
-              <div>• address/location</div>
-              <div>• city</div>
-              <div>• state/province</div>
-              <div>• zipCode/postalCode</div>
-              <div>• country</div>
-              <div>• dateOfBirth/dob</div>
-              <div>• gender/sex</div>
-              <div>• occupation/job</div>
-              <div>• company/organization</div>
-              <div>• referredBy/referral</div>
-              <div>• emergencyContact</div>
-              <div>• emergencyPhone</div>
-              <div>• insuranceProvider</div>
-              <div>• insuranceId/policyNumber</div>
-              <div>• notes/comments</div>
+          <div className="space-y-4">
+            <div className="bg-muted/30 p-4 rounded-lg">
+              <h3 className="text-sm font-medium mb-2 font-poppins flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                Supported Fields
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 text-sm text-muted-foreground font-montserrat">
+                <div>• name (required)</div>
+                <div>• email</div>
+                <div>• phone/phoneNumber</div>
+                <div>• cellPhone/mobilePhone</div>
+                <div>• workPhone/businessPhone</div>
+                <div>• fax/faxNumber</div>
+                <div>• address/location</div>
+                <div>• city</div>
+                <div>• state/province</div>
+                <div>• zipCode/postalCode</div>
+                <div>• country</div>
+                <div>• dateOfBirth/dob</div>
+                <div>• gender/sex</div>
+                <div>• occupation/job</div>
+                <div>• company/organization</div>
+                <div>• referredBy/referral</div>
+                <div>• emergencyContact</div>
+                <div>• emergencyPhone</div>
+                <div>• insuranceProvider</div>
+                <div>• insuranceId/policyNumber</div>
+                <div>• notes/comments</div>
+              </div>
+            </div>
+            
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-medium mb-2 font-poppins flex items-center text-blue-700">
+                <FileText className="h-4 w-4 mr-2" />
+                Square CSV Support
+              </h3>
+              <p className="text-sm text-blue-700 mb-2 font-montserrat">
+                You can now directly import client data exported from Square! The importer will automatically:
+              </p>
+              <ul className="list-disc pl-5 text-sm text-blue-700 font-montserrat">
+                <li>Combine First Name and Last Name fields</li>
+                <li>Extract date of birth information from multiple fields</li>
+                <li>Clean up phone number formatting</li>
+                <li>Combine address fields</li>
+                <li>Store Square-specific information in the notes field</li>
+              </ul>
             </div>
           </div>
           

@@ -12,4 +12,22 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - VITE_API_URL=http://api:8000
     command: npm run dev
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+    environment:
+      - SQUARE_ENVIRONMENT=${SQUARE_ENVIRONMENT}
+      - SQUARE_ACCESS_TOKEN=${SQUARE_ACCESS_TOKEN}
+      - SQUARE_LOCATION_ID=${SQUARE_LOCATION_ID}
+      - VITE_FINE_ENDPOINT=${VITE_FINE_ENDPOINT}
+    restart: always
