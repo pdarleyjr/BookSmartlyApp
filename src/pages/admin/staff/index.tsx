@@ -16,13 +16,21 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Schema } from "@/lib/db-types";
 
-type StaffMember = Schema["users"] & {
+type StaffMember = {
+  id: string | number;
+  email: string;
+  name?: string;
+  organizationId?: number;
+  organizationApproved?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   roles?: Schema["user_roles"][];
-  licenseNumber?: string;
-  specialty?: string;
-  bio?: string;
-  hireDate?: string;
-  status?: "active" | "inactive";
+  userId?: string;
+  licenseNumber?: string | null;
+  specialty?: string | null;
+  bio?: string | null;
+  hireDate?: string | null;
+  status?: "active" | "inactive" | null;
 };
 
 const StaffManagement = () => {
@@ -160,7 +168,7 @@ const StaffManagement = () => {
     setSelectedStaff(staff);
     // Set the current role
     const adminRole = staff.roles?.find(role => role.role === "org_admin" || role.role === "super_admin");
-    setSelectedRole(adminRole ? adminRole.role : "user");
+    setSelectedRole((adminRole?.role === "org_admin" || adminRole?.role === "super_admin") ? adminRole.role : "user");
     setIsRoleDialogOpen(true);
   };
   

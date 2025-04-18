@@ -87,11 +87,22 @@ const ChatPage = () => {
       const chatMessages = messages
         .filter(msg => msg.role !== "function") // Filter out function messages for display only
         .concat(userMessage)
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content,
-          ...(msg.functionCall ? { function_call: msg.functionCall } : {})
-        }));
+        .map(msg => {
+          switch (msg.role) {
+            case "user":
+              return { role: "user", content: msg.content };
+            case "assistant":
+              return {
+                role: "assistant",
+                content: msg.content,
+                ...(msg.functionCall ? { function_call: msg.functionCall } : {})
+              };
+            case "system":
+              return { role: "system", content: msg.content };
+            default:
+              return { role: "user", content: msg.content };
+          }
+        });
       
       // Add function results as function messages
       messages.forEach(msg => {

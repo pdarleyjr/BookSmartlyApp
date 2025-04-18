@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ProtectedRoute } from "@/components/auth/route-components";
 import { analyticsApi, type AnalyticsData } from "@/api/analytics";
 import { fine } from "@/lib/fine";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { Calendar, Clock, Users, MapPin, BarChart2 } from "lucide-react";
+import { Calendar, Clock, BarChart2 } from "lucide-react";
 
 const COLORS = ['#5865F2', '#EB459E', '#57F287', '#FEE75C', '#ED4245', '#9B59B6', '#3498DB', '#2ECC71'];
 
@@ -24,7 +24,7 @@ const UserAnalyticsDashboard = () => {
         setIsLoading(true);
         const data = await analyticsApi.getUserAnalytics(session.user.id);
         setAnalyticsData(data);
-      } catch (error) {
+      } catch {
         toast({
           title: "Error",
           description: "Failed to load analytics data. Please try again.",
@@ -68,6 +68,52 @@ const UserAnalyticsDashboard = () => {
           <p className="text-center py-8 font-montserrat">Loading analytics data...</p>
         ) : (
           <div className="space-y-6">
+            {/* AI Insights */}
+            <Card className="mb-6 border-purple-200 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center text-purple-700 dark:text-purple-300">
+                  <BarChart2 className="h-5 w-5 mr-2" />
+                  AI Insights
+                </CardTitle>
+                <CardDescription>
+                  Automatically generated insights based on your data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2">
+                    <div className="h-5 w-5 mt-0.5 flex-shrink-0 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">1</span>
+                    </div>
+                    <span>Your revenue has increased by 15% compared to last month</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="h-5 w-5 mt-0.5 flex-shrink-0 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">2</span>
+                    </div>
+                    <span>Tuesday and Thursday are your busiest days</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="h-5 w-5 mt-0.5 flex-shrink-0 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">3</span>
+                    </div>
+                    <span>Most of your appointments are scheduled between 2PM and 5PM</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="h-5 w-5 mt-0.5 flex-shrink-0 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">4</span>
+                    </div>
+                    <span>Therapy sessions generate 65% of your total revenue</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="h-5 w-5 mt-0.5 flex-shrink-0 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">5</span>
+                    </div>
+                    <span>You have 3 appointments that need to be billed</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>

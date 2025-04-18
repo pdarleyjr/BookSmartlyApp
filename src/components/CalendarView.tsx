@@ -56,10 +56,16 @@ export function CalendarView({
     return day.getMonth() === currentMonth.getMonth();
   };
 
+  // Dynamic sizing based on isCompact
+  const dayButtonHeight = isCompact ? "h-20" : "h-12";
+  const dayNumberSize = isCompact ? "text-lg w-10 h-10" : "text-sm w-7 h-7";
+  const monthTitleSize = isCompact ? "text-2xl" : "text-xl";
+  const padding = isCompact ? "p-6" : "p-4";
+
   return (
-    <div className="w-full p-4 border rounded-lg bg-card">
+    <div className={cn("w-full border rounded-lg bg-card", padding)}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">
+        <h2 className={cn(monthTitleSize, "font-semibold")}>
           {format(currentMonth, "MMMM yyyy")}
         </h2>
         <div className="flex gap-2">
@@ -97,7 +103,9 @@ export function CalendarView({
             <button
               key={day.toString()}
               className={cn(
-                "flex flex-col items-center justify-start relative h-12 p-1",
+                "flex flex-col items-center justify-start relative",
+                dayButtonHeight,
+                "p-1",
                 isSelected && "bg-primary text-white rounded-lg",
                 !isSelected && isDayToday && "border border-primary rounded-lg",
                 !isSelected && !isDayToday && "hover:bg-muted rounded-lg",
@@ -106,7 +114,8 @@ export function CalendarView({
               onClick={() => onDateSelect(day)}
             >
               <time dateTime={format(day, "yyyy-MM-dd")} className={cn(
-                "text-sm w-7 h-7 flex items-center justify-center rounded-full",
+                dayNumberSize,
+                "flex items-center justify-center rounded-full",
                 isSelected && "font-bold"
               )}>
                 {format(day, "d")}

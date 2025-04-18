@@ -18,7 +18,6 @@ import CalendarPage from "@/pages/calendar";
 import UserAnalyticsDashboard from "@/pages/analytics";
 import BillingPage from "@/pages/billing";
 import ChatPage from "@/pages/chat";
-import AIAnalyticsPage from "@/pages/ai-analytics";
 import AdminDashboard from "@/pages/admin/index";
 import AdminAppointmentDetails from "@/pages/admin/appointments/[id]";
 import AdminUserManagement from "@/pages/admin/users/[id]";
@@ -54,7 +53,6 @@ function App() {
               <Route path="/analytics" element={<UserAnalyticsDashboard />} />
               <Route path="/billing" element={<BillingPage />} />
               <Route path="/chat" element={<ChatPage />} />
-              <Route path="/ai-analytics" element={<AIAnalyticsPage />} />
               <Route path="/users/:id" element={<AdminUserManagement />} />
               <Route path="/settings/appointment-types" element={<AdminAppointmentTypes />} />
               <Route path="/settings/locations" element={<AdminLocations />} />
