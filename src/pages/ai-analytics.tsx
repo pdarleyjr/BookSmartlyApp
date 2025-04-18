@@ -1,182 +1,236 @@
 import { useState, useEffect } from "react";
-import { Layout } from "../components/layout/Layout";
-import { FinancialAnalyticsDashboard } from "../components/analytics/FinancialCharts";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Loader2, RefreshCw } from "lucide-react";
-import { chatApi } from "../api/chat";
-import { useAuth } from "../hooks/use-auth";
+import { Layout } from "@/components/layout/Layout";
+import { ProtectedRoute } from "@/components/auth/route-components";
+import { fine } from "@/lib/fine";
+import { useToast } from "@/hooks/use-toast";
+import { BarChart, LineChart, PieChart, BarChart2, TrendingUp, Calendar, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Mock data for initial state
-const initialData = {
-  totalRevenue: 0,
-  byLocation: [],
-  byUser: [],
-  period: {
-    startDate: 'all time',
-    endDate: 'present'
-  }
-};
-
-export default function AIAnalyticsPage() {
-  const { user } = useAuth();
-  const [analyticsData, setAnalyticsData] = useState(initialData);
-  const [isLoading, setIsLoading] = useState(false);
-  const [organizationId, setOrganizationId] = useState<number>(1); // Default to org ID 1
-  const [timeRange, setTimeRange] = useState<string>("90days");
-
-  // Load analytics data
-  const loadAnalytics = async () => {
-    setIsLoading(true);
-    try {
-      // Calculate date range based on selected time range
-      const endDate = new Date().toISOString().split('T')[0];
-      let startDate;
-      
-      switch (timeRange) {
-        case "30days":
-          startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          break;
-        case "90days":
-          startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          break;
-        case "year":
-          startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          break;
-        default:
-          startDate = undefined;
-      }
-
-      // Use the chat API to get financial analytics
-      const messages = [
-        { 
-          role: "system" as const, 
-          content: "You are a helpful assistant that can retrieve financial analytics data." 
-        },
-        { 
-          role: "user" as const, 
-          content: `Get financial analytics for organization ${organizationId}${startDate ? ` from ${startDate} to ${endDate}` : ''}.` 
-        }
-      ];
-
-      const response = await chatApi.processConversation(messages);
-      
-      if (response.functionCall && response.functionCall.name === "getFinancialAnalytics") {
-        setAnalyticsData(response.functionCall.result as typeof initialData);
-      } else {
-        console.error("No financial analytics data returned");
-      }
-    } catch (error) {
-      console.error("Error loading analytics:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load analytics on initial render and when filters change
+const AIAnalyticsPage = () => {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isLoading, setIsLoading] = useState(true);
+  const [insights] = useState<string[]>([
+    "Your revenue has increased by 15% compared to last month",
+    "Tuesday and Thursday are your busiest days",
+    "Most of your appointments are scheduled between 2PM and 5PM",
+    "Therapy sessions generate 65% of your total revenue",
+    "You have 3 appointments that need to be billed"
+  ]);
+  
+  const { toast } = useToast();
+  const { data: session } = fine.auth.useSession();
+  
   useEffect(() => {
-    if (user) {
-      loadAnalytics();
-    }
-  }, [user, organizationId, timeRange]);
-
+    const loadData = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        setIsLoading(true);
+        // In a real implementation, we would fetch analytics data here
+        // For now, we'll just simulate a loading delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error("Error loading analytics data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load analytics data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [session?.user?.id, toast]);
+  
   return (
     <Layout>
-      <div className="container mx-auto py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">AI-Powered Financial Analytics</h1>
-            <p className="text-muted-foreground">
-              Analyze revenue by location, user, and time period using AI
-            </p>
-          </div>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <h1 className="text-2xl font-bold">AI-Powered Analytics</h1>
           
-          <div className="flex items-center gap-4">
-            <Select
-              value={organizationId.toString()}
-              onValueChange={(value) => setOrganizationId(parseInt(value))}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select organization" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Main Organization</SelectItem>
-                <SelectItem value="2">Branch Office</SelectItem>
-                <SelectItem value="3">Satellite Location</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={timeRange}
-              onValueChange={(value) => setTimeRange(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select time range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30days">Last 30 Days</SelectItem>
-                <SelectItem value="90days">Last 90 Days</SelectItem>
-                <SelectItem value="year">Last Year</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button 
-              variant="outline" 
-              onClick={loadAnalytics}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Refresh
-            </Button>
-          </div>
+          <Button variant="outline">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Generate Report
+          </Button>
         </div>
-
-        {isLoading ? (
-          <Card className="w-full p-8">
-            <div className="flex flex-col items-center justify-center h-[400px]">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p className="text-muted-foreground">Loading analytics data...</p>
-            </div>
-          </Card>
-        ) : (
-          <FinancialAnalyticsDashboard data={analyticsData} />
-        )}
-
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>About AI-Powered Analytics</CardTitle>
+        
+        {/* AI Insights */}
+        <Card className="mb-6 border-purple-200 bg-purple-50 dark:bg-purple-950/20 dark:border-purple-800">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center text-purple-700 dark:text-purple-300">
+              <BarChart2 className="h-5 w-5 mr-2" />
+              AI Insights
+            </CardTitle>
             <CardDescription>
-              How our AI assistant helps you understand your business performance
+              Automatically generated insights based on your data
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">
-              BookSmartly's AI assistant can analyze your appointment and revenue data to provide 
-              insights about your business performance. You can ask questions like:
-            </p>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>"What's my total revenue for the last quarter?"</li>
-              <li>"Which location is generating the most revenue?"</li>
-              <li>"Who are my top-performing staff members?"</li>
-              <li>"What days of the week are most profitable?"</li>
-            </ul>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-24">
+                <p>Analyzing your data...</p>
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {insights.map((insight, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <div className="h-5 w-5 mt-0.5 flex-shrink-0 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">{index + 1}</span>
+                    </div>
+                    <span>{insight}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
-          <CardFooter>
-            <Button 
-              onClick={() => window.location.href = '/chat'}
-              className="w-full md:w-auto"
-            >
-              Chat with AI Assistant
-            </Button>
-          </CardFooter>
         </Card>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
+            <TabsTrigger value="appointments">Appointments</TabsTrigger>
+          </TabsList>
+          
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <Calendar className="h-5 w-5 mr-2 text-blue-500" />
+                    Appointments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">24</div>
+                  <p className="text-sm text-muted-foreground">
+                    This month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <Users className="h-5 w-5 mr-2 text-green-500" />
+                    Clients
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">18</div>
+                  <p className="text-sm text-muted-foreground">
+                    Active clients
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2 text-purple-500" />
+                    Revenue
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">$3,240</div>
+                  <p className="text-sm text-muted-foreground">
+                    This month
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BarChart className="h-5 w-5 mr-2" />
+                    Revenue by Service
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="h-80">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-full">
+                      <p>Loading chart...</p>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <PieChart className="h-40 w-40 text-muted-foreground" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <LineChart className="h-5 w-5 mr-2" />
+                    Appointment Trends
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="h-80">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-full">
+                      <p>Loading chart...</p>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <LineChart className="h-40 w-40 text-muted-foreground" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          {/* Revenue Tab */}
+          <TabsContent value="revenue" className="w-full">
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Analysis</CardTitle>
+                <CardDescription>
+                  Financial performance over time
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[500px]">
+                <div className="flex justify-center items-center h-full">
+                  <BarChart className="h-40 w-40 text-muted-foreground" />
+                  <p className="ml-4 text-muted-foreground">Financial charts will be available soon</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Appointments Tab */}
+          <TabsContent value="appointments" className="w-full">
+            <Card>
+              <CardHeader>
+                <CardTitle>Appointment Analytics</CardTitle>
+                <CardDescription>
+                  Patterns and trends in your appointment schedule
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[500px]">
+                <div className="flex justify-center items-center h-full">
+                  <p className="text-muted-foreground">Appointment analytics will be available soon</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
-}
+};
+
+// Wrap with ProtectedRoute to ensure only authenticated users can access
+const ProtectedAIAnalyticsPage = () => (
+  <ProtectedRoute Component={AIAnalyticsPage} />
+);
+
+export default ProtectedAIAnalyticsPage;

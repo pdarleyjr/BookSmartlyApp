@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { IOSButton } from "@/components/ui/ios-button";
-import { CreditCard, Download, Plus } from "lucide-react";
+import { CreditCard, Download } from "lucide-react";
 
 const BillingPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
