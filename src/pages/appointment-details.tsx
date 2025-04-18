@@ -8,8 +8,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ProtectedRoute } from "@/components/auth/route-components";
 import { fine } from "@/lib/fine";
 import { useToast } from "@/hooks/use-toast";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { deleteAppointment, fetchAppointmentById } from "@/redux/slices/appointmentsSlice";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -31,8 +29,6 @@ const AppointmentDetailsPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: session } = fine.auth.useSession();
-  const dispatch = useAppDispatch();
-  const appointments = useAppSelector(state => state.appointments.items);
 
   useEffect(() => {
     const fetchAppointment = async () => {
@@ -40,24 +36,13 @@ const AppointmentDetailsPage = () => {
 
       try {
         setIsLoading(true);
-        
-        // First check if we already have the appointment in Redux store
-        const existingAppointment = appointments.find(a => a.id === parseInt(id));
-        
-        if (existingAppointment) {
-          setAppointment(existingAppointment);
-          setIsLoading(false);
-          return;
-        }
-        
-        // If not in store, fetch from API
-        const result = await dispatch(fetchAppointmentById({
-          id: parseInt(id),
-          userId: session.user.id
-        })).unwrap();
+        const data = await fine.table("appointments")
+          .select()
+          .eq("id", parseInt(id))
+          .eq("userId", session.user.id);
 
-        if (result) {
-          setAppointment(result);
+        if (data && data.length > 0) {
+          setAppointment(data[0]);
         } else {
           toast({
             title: "Error",
@@ -79,17 +64,17 @@ const AppointmentDetailsPage = () => {
     };
 
     fetchAppointment();
-  }, [id, session?.user?.id, navigate, appointments, dispatch]);
+  }, [id, session?.user?.id, navigate]);
 
   const handleDelete = async () => {
     if (!session?.user?.id || !appointment?.id) return;
     
     try {
       setIsDeleting(true);
-      await dispatch(deleteAppointment({ 
-        id: appointment.id, 
-        userId: session.user.id 
-      })).unwrap();
+      await fine.table("appointments")
+        .delete()
+        .eq("id", appointment.id)
+        .eq("userId", session.user.id);
       
       toast({
         title: "Appointment deleted",
@@ -128,7 +113,7 @@ const AppointmentDetailsPage = () => {
       <Layout>
         <div className="container mx-auto px-4 py-6 md:py-8">
           <div className="max-w-2xl mx-auto">
-            <p className="text-center py-8 font-montserrat">Loading appointment details...</p>
+            <p className="text-center py-8">Loading appointment details...</p>
           </div>
         </div>
       </Layout>
@@ -143,7 +128,7 @@ const AppointmentDetailsPage = () => {
             <IOSButton 
               variant="ghost" 
               onClick={() => navigate("/")}
-              className="ios-touch-target flex items-center"
+              className="flex items-center"
             >
               <ArrowLeft className="h-5 w-5 mr-2" />
               Back to Calendar
@@ -151,43 +136,41 @@ const AppointmentDetailsPage = () => {
           </div>
           
           {appointment && (
-            <Card className="ios-card w-full overflow-hidden border-none shadow-md">
-              <div className="h-2 bg-coral w-full" />
-              <CardHeader className="pt-4">
-                <CardTitle className="text-2xl font-poppins">{appointment.title}</CardTitle>
+            <Card>
+              <CardHeader>
+                <CardTitle>{appointment.title}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="flex items-center gap-2 font-montserrat">
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-lg">{formatDate(appointment.startTime)}</span>
+                  <span>{formatDate(appointment.startTime)}</span>
                 </div>
                 
-                <div className="flex items-center gap-2 font-montserrat">
+                <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-lg">
+                  <span>
                     {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
                   </span>
                 </div>
                 
                 {appointment.location && (
-                  <div className="flex items-center gap-2 font-montserrat">
+                  <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-lg">{appointment.location}</span>
+                    <span>{appointment.location}</span>
                   </div>
                 )}
                 
                 {appointment.description && (
-                  <div className="mt-6 pt-6 border-t">
-                    <h3 className="text-lg font-medium mb-2 font-poppins">Description</h3>
-                    <p className="text-muted-foreground font-montserrat">{appointment.description}</p>
+                  <div className="mt-4 pt-4 border-t">
+                    <h3 className="text-lg font-medium mb-2">Description</h3>
+                    <p className="text-muted-foreground">{appointment.description}</p>
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="flex justify-end gap-3 pb-6">
+              <CardFooter className="flex justify-end gap-3">
                 <IOSButton 
                   variant="outline" 
                   onClick={() => navigate(`/edit-appointment/${appointment.id}`)}
-                  className="ios-touch-target"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -195,21 +178,21 @@ const AppointmentDetailsPage = () => {
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <IOSButton variant="destructive" disabled={isDeleting} className="ios-touch-target">
+                    <IOSButton variant="destructive" disabled={isDeleting}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </IOSButton>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="ios-card">
+                  <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="font-poppins">Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription className="font-montserrat">
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
                         This action cannot be undone. This will permanently delete your appointment.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="ios-touch-target font-montserrat">Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="ios-touch-target bg-coral font-montserrat">
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
                         {isDeleting ? "Deleting..." : "Delete"}
                       </AlertDialogAction>
                     </AlertDialogFooter>

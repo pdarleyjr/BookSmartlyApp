@@ -1,36 +1,50 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Layout } from "@/components/layout/Layout";
 import { CalendarView } from "@/components/CalendarView";
 import { AppointmentCard } from "@/components/AppointmentCard";
 import { IOSButton } from "@/components/ui/ios-button";
-import { Plus, Calendar as CalendarIcon, Clock, User } from "lucide-react";
+import { Plus, Calendar as CalendarIcon } from "lucide-react";
 import { fine } from "@/lib/fine";
 import { useToast } from "@/hooks/use-toast";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchAppointments, fetchAppointmentsByDateRange, setSelectedDate } from "@/redux/slices/appointmentsSlice";
 import { ProtectedRoute } from "@/components/auth/route-components";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
-  const [selectedDate, setSelectedDateState] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: session } = fine.auth.useSession();
-  const dispatch = useAppDispatch();
-  const appointments = useAppSelector(state => state.appointments.items);
-  const isMobile = useIsMobile();
-  
-  // Get greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
-  
+
+  useEffect(() => {
+    const loadAppointments = async () => {
+      if (!session?.user?.id) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Fetch appointments for the user
+        const data = await fine.table("appointments")
+          .select()
+          .eq("userId", session.user.id);
+        
+        setAppointments(data || []);
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load appointments. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadAppointments();
+  }, [session?.user?.id]);
+
   // Get appointments for the selected date
   const appointmentsForSelectedDate = appointments.filter(appointment => {
     try {
@@ -43,102 +57,42 @@ const Dashboard = () => {
     } catch {
       return false;
     }
-  }).sort((a, b) => {
-    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
   });
 
-  useEffect(() => {
-    const loadAppointments = async () => {
-      if (!session?.user?.id) return;
-      
-      try {
-        setIsLoading(true);
-        
-        // Fetch all appointments for the user
-        await dispatch(fetchAppointments(session.user.id)).unwrap();
-        
-        // Also fetch appointments for the current month range
-        const monthStart = startOfMonth(selectedDate);
-        const monthEnd = endOfMonth(selectedDate);
-        
-        await dispatch(fetchAppointmentsByDateRange({
-          userId: session.user.id,
-          startDate: monthStart.toISOString(),
-          endDate: monthEnd.toISOString()
-        })).unwrap();
-      } catch {
-        toast({
-          title: "Error",
-          description: "Failed to load appointments. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadAppointments();
-  }, [session?.user?.id, dispatch]);
-
-  const handleDateSelect = (date: Date) => {
-    setSelectedDateState(date);
-    dispatch(setSelectedDate(date.toISOString()));
-    
-    // When selecting a date in a different month, fetch appointments for that month
-    if (date.getMonth() !== selectedDate.getMonth() && session?.user?.id) {
-      const monthStart = startOfMonth(date);
-      const monthEnd = endOfMonth(date);
-      
-      dispatch(fetchAppointmentsByDateRange({
-        userId: session.user.id,
-        startDate: monthStart.toISOString(),
-        endDate: monthEnd.toISOString()
-      }));
-    }
-  };
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     if (session?.user?.id) {
-      dispatch(fetchAppointments(session.user.id));
+      try {
+        const data = await fine.table("appointments")
+          .select()
+          .eq("userId", session.user.id);
+        
+        setAppointments(data || []);
+      } catch (error) {
+        console.error("Error refreshing appointments:", error);
+      }
     }
   };
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-6 md:py-8">
-        {/* Mobile Greeting Header */}
-        {isMobile && session?.user && (
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold font-poppins mb-1">
-              {getGreeting()}, {session.user.name?.split(' ')[0] || 'there'}!
-            </h1>
-            <p className="text-muted-foreground font-montserrat">
-              {appointmentsForSelectedDate.length > 0
-                ? `You have ${appointmentsForSelectedDate.length} appointment${appointmentsForSelectedDate.length > 1 ? 's' : ''} today.`
-                : 'No appointments scheduled for today.'}
-            </p>
-          </div>
-        )}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold font-poppins">Calendar</h1>
+          <IOSButton
+            onClick={() => navigate("/create-appointment")}
+            className="ios-touch-target"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Appointment
+          </IOSButton>
+        </div>
         
         <div className="flex flex-col md:flex-row gap-6">
           {/* Calendar Column */}
           <div className="w-full md:w-7/12 lg:w-8/12">
-            {!isMobile && (
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold font-poppins">Calendar</h1>
-                <IOSButton
-                  onClick={() => navigate("/create-appointment")}
-                  className="ios-touch-target"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Appointment
-                </IOSButton>
-              </div>
-            )}
-            
             <CalendarView
               appointments={appointments}
-              onDateSelect={handleDateSelect}
+              onDateSelect={setSelectedDate}
               selectedDate={selectedDate}
             />
           </div>
@@ -147,7 +101,7 @@ const Dashboard = () => {
           <div className="w-full md:w-5/12 lg:w-4/12">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold font-poppins">
-                {format(selectedDate, "MMMM d, yyyy")}
+                {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </h2>
             </div>
             
@@ -180,37 +134,6 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-        
-        {/* Mobile Floating Action Button */}
-        {isMobile && (
-          <div className="fixed bottom-20 right-4 z-40">
-            <IOSButton
-              onClick={() => navigate("/create-appointment")}
-              size="icon"
-              className="rounded-full shadow-lg"
-            >
-              <Plus className="h-6 w-6" />
-            </IOSButton>
-          </div>
-        )}
-        
-        {/* Mobile Bottom Navigation */}
-        {isMobile && (
-          <div className="fixed bottom-0 left-0 right-0 bg-background border-t flex justify-around items-center p-2 z-30">
-            <button className="flex flex-col items-center justify-center p-2 rounded-lg active:scale-95 transition-transform min-w-[64px]">
-              <CalendarIcon className="h-6 w-6 text-primary mb-1" />
-              <span className="text-xs">Calendar</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-2 rounded-lg active:scale-95 transition-transform min-w-[64px]">
-              <Clock className="h-6 w-6 text-muted-foreground mb-1" />
-              <span className="text-xs text-muted-foreground">Schedule</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-2 rounded-lg active:scale-95 transition-transform min-w-[64px]">
-              <User className="h-6 w-6 text-muted-foreground mb-1" />
-              <span className="text-xs text-muted-foreground">Profile</span>
-            </button>
-          </div>
-        )}
       </div>
     </Layout>
   );
