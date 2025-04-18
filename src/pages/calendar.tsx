@@ -3,79 +3,137 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Layout } from "@/components/layout/Layout";
 import { CalendarView } from "@/components/CalendarView";
 import { IOSButton } from "@/components/ui/ios-button";
-import { Plus, Calendar as CalendarIcon, Check, Clock, RefreshCcw, UserX } from "lucide-react";
+import {
+  Plus,
+  Calendar as CalendarIcon,
+  Check,
+  Clock,
+  RefreshCcw,
+  UserX,
+} from "lucide-react";
 import { fine } from "@/lib/fine";
 import { useToast } from "@/hooks/use-toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchAppointments, fetchAppointmentsByDateRange, setSelectedDate, updateAppointment } from "@/redux/slices/appointmentsSlice";
+import {
+  fetchAppointments,
+  fetchAppointmentsByDateRange,
+  setSelectedDate,
+  updateAppointment,
+} from "@/redux/slices/appointmentsSlice";
 import { ProtectedRoute } from "@/components/auth/route-components";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Schema } from "@/lib/db-types";
+
+// Add type for appointment status
+type AppointmentStatus =
+  | "scheduled"
+  | "arrived"
+  | "completed"
+  | "cancelled"
+  | "no-show";
 
 const CalendarPage = () => {
   const [selectedDate, setSelectedDateState] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("calendar");
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Schema["appointments"] | null>(null);
-  const [appointmentStatus, setAppointmentStatus] = useState<"scheduled" | "arrived" | "completed" | "cancelled" | "no-show">("scheduled");
-  
+  const [selectedAppointment, setSelectedAppointment] = useState<
+    Schema["appointments"] | null
+  >(null);
+  const [appointmentStatus, setAppointmentStatus] =
+    useState<AppointmentStatus>("scheduled");
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: session } = fine.auth.useSession();
   const dispatch = useAppDispatch();
-  const appointments = useAppSelector(state => state.appointments.items);
-  
+  const appointments = useAppSelector((state) => state.appointments.items);
+  const appointmentsError = useAppSelector((state) => state.appointments.error);
+
   // Get appointments for the selected date
-  const appointmentsForSelectedDate = appointments.filter(appointment => {
-    try {
-      const appointmentDate = new Date(appointment.startTime);
-      return (
-        appointmentDate.getDate() === selectedDate.getDate() &&
-        appointmentDate.getMonth() === selectedDate.getMonth() &&
-        appointmentDate.getFullYear() === selectedDate.getFullYear()
-      );
-    } catch {
-      return false;
-    }
-  }).sort((a, b) => {
-    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-  });
+  const appointmentsForSelectedDate = appointments
+    .filter((appointment) => {
+      if (!appointment.startTime) return false;
+      try {
+        const appointmentDate = new Date(appointment.startTime);
+        if (isNaN(appointmentDate.getTime())) return false;
+
+        return (
+          appointmentDate.getDate() === selectedDate.getDate() &&
+          appointmentDate.getMonth() === selectedDate.getMonth() &&
+          appointmentDate.getFullYear() === selectedDate.getFullYear()
+        );
+      } catch {
+        return false;
+      }
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.startTime || 0);
+      const dateB = new Date(b.startTime || 0);
+      return dateA.getTime() - dateB.getTime();
+    });
 
   // Group appointments by status
   const appointmentsByStatus = {
-    scheduled: appointmentsForSelectedDate.filter(a => !a.status || a.status === "scheduled"),
-    arrived: appointmentsForSelectedDate.filter(a => a.status === "arrived"),
-    completed: appointmentsForSelectedDate.filter(a => a.status === "completed"),
-    cancelled: appointmentsForSelectedDate.filter(a => a.status === "cancelled"),
-    noShow: appointmentsForSelectedDate.filter(a => a.status === "no-show")
+    scheduled: appointmentsForSelectedDate.filter(
+      (a) => !a.status || a.status === "scheduled"
+    ),
+    arrived: appointmentsForSelectedDate.filter((a) => a.status === "arrived"),
+    completed: appointmentsForSelectedDate.filter(
+      (a) => a.status === "completed"
+    ),
+    cancelled: appointmentsForSelectedDate.filter(
+      (a) => a.status === "cancelled"
+    ),
+    noShow: appointmentsForSelectedDate.filter((a) => a.status === "no-show"),
   };
 
   useEffect(() => {
     const loadAppointments = async () => {
       if (!session?.user?.id) return;
-      
+
       try {
         setIsLoading(true);
-        
+
         // Fetch all appointments for the user
         await dispatch(fetchAppointments(session.user.id)).unwrap();
-        
+
         // Also fetch appointments for the current month range
         const monthStart = startOfMonth(selectedDate);
         const monthEnd = endOfMonth(selectedDate);
-        
-        await dispatch(fetchAppointmentsByDateRange({
-          userId: session.user.id,
-          startDate: monthStart.toISOString(),
-          endDate: monthEnd.toISOString()
-        })).unwrap();
+
+        await dispatch(
+          fetchAppointmentsByDateRange({
+            userId: session.user.id,
+            startDate: monthStart.toISOString(),
+            endDate: monthEnd.toISOString(),
+          })
+        ).unwrap();
       } catch {
         toast({
           title: "Error",
@@ -86,24 +144,26 @@ const CalendarPage = () => {
         setIsLoading(false);
       }
     };
-    
+
     loadAppointments();
   }, [session?.user?.id, dispatch]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDateState(date);
     dispatch(setSelectedDate(date.toISOString()));
-    
+
     // When selecting a date in a different month, fetch appointments for that month
     if (date.getMonth() !== selectedDate.getMonth() && session?.user?.id) {
       const monthStart = startOfMonth(date);
       const monthEnd = endOfMonth(date);
-      
-      dispatch(fetchAppointmentsByDateRange({
-        userId: session.user.id,
-        startDate: monthStart.toISOString(),
-        endDate: monthEnd.toISOString()
-      }));
+
+      dispatch(
+        fetchAppointmentsByDateRange({
+          userId: session.user.id,
+          startDate: monthStart.toISOString(),
+          endDate: monthEnd.toISOString(),
+        })
+      );
     }
   };
 
@@ -119,23 +179,26 @@ const CalendarPage = () => {
     setStatusDialogOpen(true);
   };
 
+  // Type-safe status update
   const updateAppointmentStatus = async () => {
-    if (!selectedAppointment || !session?.user?.id) return;
-    
+    if (!selectedAppointment?.id || !session?.user?.id) return;
+
     try {
-      await dispatch(updateAppointment({
-        id: selectedAppointment.id!,
-        userId: session.user.id,
-        appointment: { status: appointmentStatus }
-      })).unwrap();
-      
+      await dispatch(
+        updateAppointment({
+          id: selectedAppointment.id,
+          userId: session.user.id,
+          appointment: { status: appointmentStatus as AppointmentStatus },
+        })
+      ).unwrap();
+
       toast({
         title: "Status Updated",
         description: `Appointment status changed to ${appointmentStatus}`,
       });
-      
+
       setStatusDialogOpen(false);
-    } catch {
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update appointment status. Please try again.",
@@ -162,6 +225,11 @@ const CalendarPage = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-6 md:py-8">
+        {appointmentsError && (
+          <div className="mb-4 p-4 rounded-lg bg-red-100 border border-red-300 text-red-800 font-semibold">
+            {appointmentsError}
+          </div>
+        )}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold font-poppins">Calendar</h1>
           <div className="flex gap-2">
@@ -178,13 +246,13 @@ const CalendarPage = () => {
             </IOSButton>
           </div>
         </div>
-        
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="calendar">Calendar View</TabsTrigger>
             <TabsTrigger value="schedule">Schedule View</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="calendar" className="w-full">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Calendar Column - Expanded to take more space */}
@@ -196,53 +264,77 @@ const CalendarPage = () => {
                   isCompact={false}
                 />
               </div>
-              
+
               {/* Appointments Column */}
               <div className="w-full lg:w-4/12">
                 <Card>
                   <CardHeader>
-                    <CardTitle>{format(selectedDate, "MMMM d, yyyy")}</CardTitle>
+                    <CardTitle>
+                      {format(selectedDate, "MMMM d, yyyy")}
+                    </CardTitle>
                     <CardDescription>
-                      {appointmentsForSelectedDate.length} appointment{appointmentsForSelectedDate.length !== 1 ? 's' : ''}
+                      {appointmentsForSelectedDate.length} appointment
+                      {appointmentsForSelectedDate.length !== 1 ? "s" : ""}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
-                      <p className="text-center py-8 font-montserrat">Loading appointments...</p>
+                      <p className="text-center py-8 font-montserrat">
+                        Loading appointments...
+                      </p>
                     ) : appointmentsForSelectedDate.length > 0 ? (
                       <div className="space-y-4">
                         {appointmentsForSelectedDate.map((appointment) => (
-                          <div key={appointment.id} className="flex flex-col p-4 border rounded-lg">
+                          <div
+                            key={appointment.id}
+                            className="flex flex-col p-4 border rounded-lg"
+                          >
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <h3 className="font-semibold">{appointment.title}</h3>
+                                <h3 className="font-semibold">
+                                  {appointment.title}
+                                </h3>
                                 <p className="text-sm text-muted-foreground">
-                                  {format(new Date(appointment.startTime), "h:mm a")} - {format(new Date(appointment.endTime), "h:mm a")}
+                                  {format(
+                                    new Date(appointment.startTime),
+                                    "h:mm a"
+                                  )}{" "}
+                                  -{" "}
+                                  {format(
+                                    new Date(appointment.endTime),
+                                    "h:mm a"
+                                  )}
                                 </p>
                               </div>
                               {getStatusBadge(appointment.status)}
                             </div>
-                            
+
                             {appointment.clientName && (
-                              <p className="text-sm mb-2">Client: {appointment.clientName}</p>
+                              <p className="text-sm mb-2">
+                                Client: {appointment.clientName}
+                              </p>
                             )}
-                            
+
                             {appointment.location && (
-                              <p className="text-sm mb-2">Location: {appointment.location}</p>
+                              <p className="text-sm mb-2">
+                                Location: {appointment.location}
+                              </p>
                             )}
-                            
+
                             <div className="flex justify-between mt-3">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => openStatusDialog(appointment)}
                               >
                                 Update Status
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => navigate(`/appointment/${appointment.id}`)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  navigate(`/appointment/${appointment.id}`)
+                                }
                               >
                                 View Details
                               </Button>
@@ -253,7 +345,9 @@ const CalendarPage = () => {
                     ) : (
                       <div className="text-center py-8">
                         <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                        <h3 className="text-lg font-medium mb-2 font-poppins">No appointments</h3>
+                        <h3 className="text-lg font-medium mb-2 font-poppins">
+                          No appointments
+                        </h3>
                         <p className="text-muted-foreground mb-4 font-montserrat">
                           No appointments scheduled for this day.
                         </p>
@@ -270,7 +364,7 @@ const CalendarPage = () => {
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="schedule" className="w-full">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Scheduled Appointments */}
@@ -281,28 +375,39 @@ const CalendarPage = () => {
                     Scheduled
                   </CardTitle>
                   <CardDescription>
-                    {appointmentsByStatus.scheduled.length} appointment{appointmentsByStatus.scheduled.length !== 1 ? 's' : ''}
+                    {appointmentsByStatus.scheduled.length} appointment
+                    {appointmentsByStatus.scheduled.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4">
                   {appointmentsByStatus.scheduled.length > 0 ? (
                     <div className="space-y-3">
-                      {appointmentsByStatus.scheduled.map(appointment => (
-                        <div key={appointment.id} className="p-3 border rounded-md">
+                      {appointmentsByStatus.scheduled.map((appointment) => (
+                        <div
+                          key={appointment.id}
+                          className="p-3 border rounded-md"
+                        >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="font-medium">{appointment.title}</h4>
+                              <h4 className="font-medium">
+                                {appointment.title}
+                              </h4>
                               <p className="text-sm text-muted-foreground">
-                                {format(new Date(appointment.startTime), "h:mm a")}
+                                {format(
+                                  new Date(appointment.startTime),
+                                  "h:mm a"
+                                )}
                               </p>
                               {appointment.clientName && (
-                                <p className="text-sm">{appointment.clientName}</p>
+                                <p className="text-sm">
+                                  {appointment.clientName}
+                                </p>
                               )}
                             </div>
                             <div className="flex gap-1">
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 className="h-8 w-8 text-green-500"
                                 onClick={() => {
                                   setSelectedAppointment(appointment);
@@ -312,9 +417,9 @@ const CalendarPage = () => {
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
+                              <Button
+                                size="icon"
+                                variant="ghost"
                                 className="h-8 w-8 text-red-500"
                                 onClick={() => {
                                   setSelectedAppointment(appointment);
@@ -330,11 +435,13 @@ const CalendarPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-center py-4 text-muted-foreground">No scheduled appointments</p>
+                    <p className="text-center py-4 text-muted-foreground">
+                      No scheduled appointments
+                    </p>
                   )}
                 </CardContent>
               </Card>
-              
+
               {/* Arrived Appointments */}
               <Card>
                 <CardHeader className="bg-blue-100 dark:bg-blue-900">
@@ -343,26 +450,37 @@ const CalendarPage = () => {
                     Arrived
                   </CardTitle>
                   <CardDescription>
-                    {appointmentsByStatus.arrived.length} appointment{appointmentsByStatus.arrived.length !== 1 ? 's' : ''}
+                    {appointmentsByStatus.arrived.length} appointment
+                    {appointmentsByStatus.arrived.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4">
                   {appointmentsByStatus.arrived.length > 0 ? (
                     <div className="space-y-3">
-                      {appointmentsByStatus.arrived.map(appointment => (
-                        <div key={appointment.id} className="p-3 border rounded-md">
+                      {appointmentsByStatus.arrived.map((appointment) => (
+                        <div
+                          key={appointment.id}
+                          className="p-3 border rounded-md"
+                        >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="font-medium">{appointment.title}</h4>
+                              <h4 className="font-medium">
+                                {appointment.title}
+                              </h4>
                               <p className="text-sm text-muted-foreground">
-                                {format(new Date(appointment.startTime), "h:mm a")}
+                                {format(
+                                  new Date(appointment.startTime),
+                                  "h:mm a"
+                                )}
                               </p>
                               {appointment.clientName && (
-                                <p className="text-sm">{appointment.clientName}</p>
+                                <p className="text-sm">
+                                  {appointment.clientName}
+                                </p>
                               )}
                             </div>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={() => {
                                 setSelectedAppointment(appointment);
@@ -377,11 +495,13 @@ const CalendarPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-center py-4 text-muted-foreground">No arrived clients</p>
+                    <p className="text-center py-4 text-muted-foreground">
+                      No arrived clients
+                    </p>
                   )}
                 </CardContent>
               </Card>
-              
+
               {/* Completed Appointments */}
               <Card>
                 <CardHeader className="bg-green-100 dark:bg-green-900">
@@ -390,28 +510,43 @@ const CalendarPage = () => {
                     Completed
                   </CardTitle>
                   <CardDescription>
-                    {appointmentsByStatus.completed.length} appointment{appointmentsByStatus.completed.length !== 1 ? 's' : ''}
+                    {appointmentsByStatus.completed.length} appointment
+                    {appointmentsByStatus.completed.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4">
                   {appointmentsByStatus.completed.length > 0 ? (
                     <div className="space-y-3">
-                      {appointmentsByStatus.completed.map(appointment => (
-                        <div key={appointment.id} className="p-3 border rounded-md">
+                      {appointmentsByStatus.completed.map((appointment) => (
+                        <div
+                          key={appointment.id}
+                          className="p-3 border rounded-md"
+                        >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="font-medium">{appointment.title}</h4>
+                              <h4 className="font-medium">
+                                {appointment.title}
+                              </h4>
                               <p className="text-sm text-muted-foreground">
-                                {format(new Date(appointment.startTime), "h:mm a")}
+                                {format(
+                                  new Date(appointment.startTime),
+                                  "h:mm a"
+                                )}
                               </p>
                               {appointment.clientName && (
-                                <p className="text-sm">{appointment.clientName}</p>
+                                <p className="text-sm">
+                                  {appointment.clientName}
+                                </p>
                               )}
                             </div>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline"
-                              onClick={() => navigate(`/billing?appointmentId=${appointment.id}`)}
+                              onClick={() =>
+                                navigate(
+                                  `/billing?appointmentId=${appointment.id}`
+                                )
+                              }
                             >
                               Bill
                             </Button>
@@ -420,7 +555,9 @@ const CalendarPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-center py-4 text-muted-foreground">No completed appointments</p>
+                    <p className="text-center py-4 text-muted-foreground">
+                      No completed appointments
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -428,7 +565,7 @@ const CalendarPage = () => {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       {/* Status Update Dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
@@ -438,10 +575,10 @@ const CalendarPage = () => {
               Change the status of this appointment.
             </DialogDescription>
           </DialogHeader>
-          
+
           <Select
             value={appointmentStatus}
-            onValueChange={(value: "scheduled" | "arrived" | "completed" | "cancelled" | "no-show") =>
+            onValueChange={(value: AppointmentStatus) =>
               setAppointmentStatus(value)
             }
           >
@@ -456,14 +593,15 @@ const CalendarPage = () => {
               <SelectItem value="no-show">No Show</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setStatusDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={updateAppointmentStatus}>
-              Update Status
-            </Button>
+            <Button onClick={updateAppointmentStatus}>Update Status</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -472,8 +610,6 @@ const CalendarPage = () => {
 };
 
 // Wrap with ProtectedRoute to ensure only authenticated users can access
-const ProtectedCalendarPage = () => (
-  <ProtectedRoute Component={CalendarPage} />
-);
+const ProtectedCalendarPage = () => <ProtectedRoute Component={CalendarPage} />;
 
 export default ProtectedCalendarPage;
