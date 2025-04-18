@@ -42,7 +42,11 @@ export function Layout({ children }: LayoutProps) {
     }
   };
   
-  const toggleRightPanel = () => setRightPanelVisible(!rightPanelVisible);
+  const toggleRightPanel = () => {
+    setRightPanelVisible(!rightPanelVisible);
+    // Force a resize event to help components adjust to the new layout
+    window.dispatchEvent(new Event('resize'));
+  };
   const toggleChat = () => setChatOpen(!chatOpen);
 
   return (
@@ -106,9 +110,10 @@ export function Layout({ children }: LayoutProps) {
             flex-1 transition-all duration-300 p-4
             ${!isMobile && session?.user && !sidebarCollapsed ? 'md:ml-64' : ''}
             ${!isMobile && session?.user && sidebarCollapsed ? 'md:ml-16' : ''}
+            ${!isMobile && session?.user && !rightPanelVisible ? 'md:mr-0' : 'md:mr-0'}
           `}
         >
-          <div className="glass-card p-6 rounded-discord-lg shadow-discord-lg">
+          <div className="glass-card p-6 rounded-discord-lg shadow-discord-lg h-full">
             {children}
           </div>
         </main>
@@ -119,6 +124,7 @@ export function Layout({ children }: LayoutProps) {
             className={`
               ${isMobile ? 'fixed inset-y-0 right-0 z-40 transform transition-transform duration-300 ease-in-out' : ''}
               ${(isMobile && !rightPanelVisible) ? 'translate-x-full' : 'translate-x-0'}
+              transition-all duration-300
             `}
           >
             <RightPanel />

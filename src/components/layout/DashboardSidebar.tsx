@@ -93,9 +93,12 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           
           <SidebarItem to="/billing" icon={CreditCard} label="Billing" collapsed={collapsed} />
           
-          {/* Admin link for all admin types */}
+          {/* Admin links for all admin types */}
           {(isAdmin || isSuperAdmin || isOrgAdmin) && (
-            <SidebarItem to="/admin" icon={Users} label="Admin" collapsed={collapsed} />
+            <>
+              <SidebarItem to="/admin" icon={Users} label="Admin" collapsed={collapsed} />
+              <SidebarItem to="/admin/staff" icon={UserCircle} label="Staff" collapsed={collapsed} />
+            </>
           )}
           
           <div className="pt-4 mt-4 border-t border-discord-backgroundModifierAccent">

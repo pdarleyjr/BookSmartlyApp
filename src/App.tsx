@@ -14,12 +14,14 @@ import Logout from "@/pages/logout";
 import CreateAppointment from "@/pages/create-appointment";
 import EditAppointment from "@/pages/edit-appointment";
 import AppointmentDetails from "@/pages/appointment-details";
+import CalendarPage from "@/pages/calendar";
 import UserAnalyticsDashboard from "@/pages/analytics";
 import AdminDashboard from "@/pages/admin/index";
 import AdminAppointmentDetails from "@/pages/admin/appointments/[id]";
 import AdminUserManagement from "@/pages/admin/users/[id]";
 import AdminOrganizationManagement from "@/pages/admin/organizations/[id]";
 import CreateOrganization from "@/pages/admin/organizations/new";
+import StaffManagement from "@/pages/admin/staff";
 import AdminSettings from "@/pages/admin/settings/index";
 import AdminAppointmentTypes from "@/pages/admin/settings/appointment-types";
 import AdminLocations from "@/pages/admin/settings/locations";
@@ -45,6 +47,7 @@ function App() {
               <Route path="/create-appointment" element={<CreateAppointment />} />
               <Route path="/edit-appointment/:id" element={<EditAppointment />} />
               <Route path="/appointment/:id" element={<AppointmentDetails />} />
+              <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/analytics" element={<UserAnalyticsDashboard />} />
               <Route path="/users/:id" element={<AdminUserManagement />} />
               <Route path="/settings/appointment-types" element={<AdminAppointmentTypes />} />
@@ -63,6 +66,7 @@ function App() {
               <Route path="/admin/users/:id" element={<AdminUserManagement />} />
               <Route path="/admin/organizations/:id" element={<AdminOrganizationManagement />} />
               <Route path="/admin/organizations/new" element={<CreateOrganization />} />
+              <Route path="/admin/staff" element={<StaffManagement />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/admin/settings/appointment-types" element={<AdminAppointmentTypes />} />
               <Route path="/admin/settings/locations" element={<AdminLocations />} />

@@ -41,7 +41,7 @@ export function RightPanel() {
   const averageDurationMinutes = totalAppointments > 0 ? Math.round(totalDurationMinutes / totalAppointments) : 0;
   
   return (
-    <div className="w-80 border-l border-discord-backgroundModifierAccent glass-card-dark p-4 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto shadow-discord">
+    <div className="w-72 border-l border-discord-backgroundModifierAccent glass-card-dark p-4 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto shadow-discord">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 bg-discord-backgroundModifierHover">
           <TabsTrigger

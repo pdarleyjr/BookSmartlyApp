@@ -14,6 +14,19 @@ export type Schema = {
     locationId?: number | null;
     assignedToUserId?: string | null;
     price?: number | null;
+    status?: 'scheduled' | 'arrived' | 'completed' | 'cancelled' | 'no-show' | null;
+    billingStatus?: 'unbilled' | 'billed' | 'paid' | null;
+  };
+  staff_details: {
+    id?: number;
+    userId: string;
+    licenseNumber?: string | null;
+    specialty?: string | null;
+    bio?: string | null;
+    hireDate?: string | null;
+    status?: 'active' | 'inactive' | null;
+    createdAt?: string;
+    updatedAt?: string;
   };
   users: {
     id: string;
