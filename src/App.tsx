@@ -12,6 +12,7 @@ import Logout from "@/pages/logout";
 import CreateAppointment from "@/pages/create-appointment";
 import EditAppointment from "@/pages/edit-appointment";
 import AppointmentDetails from "@/pages/appointment-details";
+import BillingPage from "@/pages/billing";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/create-appointment" element={<CreateAppointment />} />
             <Route path="/edit-appointment/:id" element={<EditAppointment />} />
             <Route path="/appointment/:id" element={<AppointmentDetails />} />
+            <Route path="/billing" element={<BillingPage />} />
           </Routes>
         </Router>
         <Sonner />
