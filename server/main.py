@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from dotenv import load_dotenv
 import os
+from auth import verify_clerk_jwt
 
 # Import routes
 from routes.square import router as square_router
@@ -29,6 +30,9 @@ async def root():
     return {"message": "Welcome to BookSmartly API"}
 
 @app.get("/health")
+@app.get("/health/protected")
+async def health_check_protected(payload=verify_clerk_jwt):
+    return {"status": "healthy", "user": payload}
 async def health_check():
     return {"status": "healthy"}
 

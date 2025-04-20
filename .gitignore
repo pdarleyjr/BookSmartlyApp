@@ -31,6 +31,7 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 .env.example
 
 # Build files
@@ -45,6 +46,8 @@ dist-ssr
 
 # Include documentation in the docs directory
 !docs/
+# Block migration guide from GitHub (contains sensitive deployment info)
+docs/Hostinger_Migration_Guide
 
 # Python specific
 __pycache__/

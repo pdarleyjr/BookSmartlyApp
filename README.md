@@ -33,17 +33,24 @@ BookSmartly is an appointment scheduling and management application built with R
    npm install
    ```
 
-3. Create a `.env` file based on `.env.example`:
+3. **Create your environment file from the canonical template:**
    ```
-   cp .env.example .env
+   cp .env.production.example .env
    ```
+   - For production deployments, use `.env.production` instead of `.env`.
 
-4. Update the `.env` file with your database connection string and OpenAI API key.
+4. Update your environment file with your database connection string, OpenAI API key, and any other required secrets. **Never commit real secrets to the repository.**
 
 5. Start the development server:
    ```
    npm run dev
    ```
+
+> **Note:**  
+> - `.env.production.example` is the **only** template you should use for environment variables.  
+> - All other example env files have been removed to avoid confusion.  
+> - For documentation on environment variables, see [docs/env-example.md](docs/env-example.md).  
+> - For deployment and secrets best practices, see [docs/Hostinger_Migration_Guide](docs/Hostinger_Migration_Guide).
 
 ## AI Features
 
@@ -92,12 +99,8 @@ BookSmartly is built to work seamlessly with Fine.dev:
 
 ## Environment Variables
 
-- `DATABASE_URL`: PostgreSQL connection string
-- `API_KEY`: API key for external services
-- `PORT`: Port for the application to run on
-- `VITE_FINE_ENDPOINT`: Fine.dev endpoint URL
-- `NODE_ENV`: Environment mode (development or production)
-- `VITE_OPENAI_API_KEY`: OpenAI API key for AI features
+All environment variables must be defined in your `.env` or `.env.production` file, based on the `.env.production.example` template.  
+See [docs/env-example.md](docs/env-example.md) for detailed documentation.
 
 ## License
 
